@@ -10,8 +10,8 @@ import gzip
 import subprocess
 
 # Genetic map
-#for chrom in (range(1,23) + ["X"]):
-for chrom in (range(7,23) + ["X"]):
+for chrom in (range(1,23) + ["X"]):
+#for chrom in (range(7,23) + ["X"]):
     kg_file = "/mnt/lab_data/montgomery/shared/1KG/ALL.chr{0}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz".format(chrom)
 
     filename = "/mnt/lab_data/montgomery/nicolerg/genetic-map/genetic_map_GRCh37_chr{0}.txt".format(chrom)
@@ -49,7 +49,8 @@ for chrom in (range(7,23) + ["X"]):
 
                     w.write("{3}\t{0}\t{1}\t{2}\n".format(kg_var, current_rate, current_map, chrom))
 
-        subprocess.check_call("cat {0} | uniq | bgzip -f > {0}.gz".format(output), shell="True")
-        subprocess.check_call("tabix -f -S 1 -s 1 -b 2 -e 2 " + output + ".gz", shell=True)
+        subprocess.check_call("cat {0} | uniq | sort -k2,2n > {0}.sorted".format(output), shell=True)
+        subprocess.check_call("bgzip -f {0}.sorted".format(output), shell="True")
+        subprocess.check_call("tabix -f -S 1 -s 1 -b 2 -e 2 " + output + ".sorted.gz", shell=True)
 
 

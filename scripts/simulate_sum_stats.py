@@ -2,6 +2,7 @@
 # Author: Mike Gloudemans
 # Date created: 7/16/2018
 
+import math
 import config
 import random
 import sys
@@ -22,17 +23,19 @@ settings = config.load_config(config_file)
 def main():
 
     with open("/users/mgloud/projects/coloc_comparisons/output/simulations/answer_key.txt", "w") as w:
-        w.write("test_case\tcausal_variants\n")        
+        w.write("test_case\tcausal_variants\tcases_n\tcontrols_n\teqtl_n\tsnps_n\n")
 
     # Get possible GWAS loci upfront, so we don't
     # waste any more time on this
     locus_bank = get_possible_loci(settings)
-    locus_bank = [l for l in locus_bank if l[0] == '1']
 
     for i in range(settings["total_test_sites"]):
 
         # Loop until we get a variant that works
         while True:
+            # Store settings for current run, for easy reference
+            settings["current_run"] = {}
+
             print "Starting new locus..."
             # Choose a locus 
             locus = random.choice(locus_bank)
@@ -40,21 +43,20 @@ def main():
 
             # Figure out if there's going to be a causal GWAS variant
             gwas_effect_size = get_gwas_effect_size(settings)
-            print gwas_effect_size
 
             # Get all haplotypes using HAPGEN2
             gwas_effect_sizes = run_hapgen2(settings, locus, gwas_effect_size)
+            settings["current_run"]["gwas_effect_sizes"] = gwas_effect_sizes
             if gwas_effect_sizes == "Bad variant":
                 continue
 
             # Get effect sizes, using LD pairings at restrictions
             eqtl_effect_sizes = get_eqtl_effect_sizes(settings, gwas_effect_sizes)
+            settings["current_run"]["eqtl_effect_sizes"] = eqtl_effect_sizes
             if eqtl_effect_sizes == "Impossible LD matrix":
                 continue
             else:
                 break
-
-        print max([abs(s) for s in eqtl_effect_sizes])
 
         eqtl_phenotypes = get_expression_phenotypes(eqtl_effect_sizes)
 
@@ -67,6 +69,7 @@ def main():
 def get_eqtl_effect_sizes(settings, gwas_effect_sizes):
 
     eqtl_effect_sizes = [0] * len(gwas_effect_sizes)
+    potential_eqtl_effect = random.uniform(settings["eqtl_min_effect_size"], settings["eqtl_max_effect_size"])
     if max([abs(ges) for ges in gwas_effect_sizes]) > 0:
         # GWAS is causal
         gwas_causal_indices = [i for i,ges in enumerate(gwas_effect_sizes) if abs(ges) > 0]
@@ -76,39 +79,18 @@ def get_eqtl_effect_sizes(settings, gwas_effect_sizes):
 
             if random.random() < settings["p_same_causal_given_both_causal"]:
                 # Same causal variant for both
-                eqtl_effect_sizes[gwas_causal_indices[0]] = settings["eqtl_effect_size"]
+                eqtl_effect_sizes[gwas_causal_indices[0]] = potential_eqtl_effect
             else:
                 # Different eQTL causal variant
-                
-                # Compute LD for those genotypes
-                # Necessary only for choosing an appropriate LD variant
-                ld_matrix = compute_eqtl_ld()
-
-                done = False
-                for j in range(20):
-                    causal_eqtl_index = random.randint(ld_matrix.shape[0] * 1 / 4, ld_matrix.shape[0] * 3 / 4)
-                    if (ld_matrix.loc[gwas_causal_indices[0] , causal_eqtl_index] ** 2) > settings["max_ld_for_different_causal"] \
-                            or gwas_causal_indices[0] == causal_eqtl_index:
-                        continue
-                    else:
-                        eqtl_effect_sizes[causal_eqtl_index] = settings["eqtl_effect_size"]
-                        done = True
-                        break
-
-                if not done:
-                    # If we can't pick a reasonable eQTL for this after 20 tries, then give up
-                    # TODO: If we let this happen to often, it will skew the probabilities,
-                    # so find a good way to fix this if it really is happening, or change
-                    # the settings to make it easier on the generator.
-                    return "Impossible LD matrix"
-
+                causal_eqtl_index = random.randint(len(eqtl_effect_sizes) * 1 / 4, len(eqtl_effect_sizes) * 3 / 4)
+                eqtl_effect_sizes[causal_eqtl_index] = potential_eqtl_effect
     else:
         # GWAS is not causal
         if random.random() < settings["p_eqtl_causal_given_no_gwas_causal"]:
             # eQTL is causal
             # Choose causal eQTL; don't let it be right at the edge of the measured region though
             causal_eqtl_index = random.randint(len(gwas_effect_sizes) * 1 / 4, len(gwas_effect_sizes) * 3 / 4)
-            eqtl_effect_sizes[causal_eqtl_index] = settings["eqtl_effect_size"]
+            eqtl_effect_sizes[causal_eqtl_index] = potential_eqtl_effect
 
     return eqtl_effect_sizes
 
@@ -215,7 +197,7 @@ def run_hapgen2(settings, locus, gwas_effect_size):
             w.write(" ".join([str(r) for r in [row['ID'], row['POS'], row['REF'], row['ALT']]]) + "\n")
 
     # Write .map centimorgans recombination rate file
-    map_file = "/users/mgloud/projects/coloc_comparisons/data/genetic-map/extended_genetic_map_GRCh37_chr{0}.txt.gz".format(locus[0])
+    map_file = "/users/mgloud/projects/coloc_comparisons/data/genetic-map/extended_genetic_map_GRCh37_chr{0}.txt.sorted.gz".format(locus[0])
     head = subprocess.check_output("zcat {0} | head -n 1".format(map_file), shell=True)
     data = subprocess.check_output("tabix {0} {1}:{2}-{3} | sed s/\\t/\ /g | cut -f2-4 -d ' '".format(map_file, locus[0], locus[1] - settings["window"], locus[1] + settings["window"]), shell=True).split("\n")
     with open("/users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map", "w") as w:
@@ -227,12 +209,20 @@ def run_hapgen2(settings, locus, gwas_effect_size):
             if int(info[1]) in set(list(vcf['POS'])):
                 w.write(line + "\n")
 
+    gwas_control_sample_size = int(math.floor(10**random.uniform(settings["gwas_min_control_log_sample_size"], settings["gwas_max_control_log_sample_size"])))
+    gwas_case_sample_size = int(math.floor(10**random.uniform(settings["gwas_min_case_log_sample_size"], settings["gwas_max_case_log_sample_size"])))
+    eqtl_sample_size = int(math.floor(10**random.uniform(settings["eqtl_min_log_sample_size"], settings["eqtl_max_log_sample_size"])))
+    settings["current_run"]["gwas_control_sample_size"] = gwas_control_sample_size
+    settings["current_run"]["gwas_case_sample_size"] = gwas_case_sample_size
+    settings["current_run"]["eqtl_sample_size"] = eqtl_sample_size
+
     # Then run HAPGEN2 to get genotypes 
-    subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_gwas.out -dl {0} 1 {1} {2} -n {3} {4}".format(locus[1], 10**gwas_effect_size, 10**(2*gwas_effect_size), settings["gwas_control_sample_size"], settings["gwas_case_sample_size"]), shell=True)
-    subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_eqtl.out -dl {0} 1 1 1 -n {1} 1".format(locus[1], settings["eqtl_sample_size"]), shell=True)
+    subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_gwas.out -dl {0} 1 {1} {2} -n {3} {4}".format(locus[1], 10**gwas_effect_size, 10**(2*gwas_effect_size), gwas_control_sample_size, gwas_case_sample_size), shell=True)
+    subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_eqtl.out -dl {0} 1 1 1 -n {1} 1".format(locus[1], eqtl_sample_size), shell=True)
 
     # Write VCF to tmp file in case we need to compute LD
     vcf.to_csv('/users/mgloud/projects/coloc_comparisons/tmp/tmp.vcf', sep="\t", index=False, header=True)
+    settings["current_run"]["rsids"] = vcf['ID']
 
     gwas_effect_sizes = [0] * vcf.shape[0]
     gwas_effect_sizes[list(vcf['POS']).index(locus[1])] = gwas_effect_size
@@ -242,7 +232,7 @@ def run_hapgen2(settings, locus, gwas_effect_size):
 def get_gwas_effect_size(settings):
   
     if random.random() < settings["p_gwas_causal"]:
-        return settings['gwas_relative_risk']
+        return random.uniform(settings["gwas_min_effect_size"], settings["gwas_max_effect_size"])
     else:
         return 0
 
@@ -253,33 +243,13 @@ def get_expression_phenotypes(eqtl_effect_sizes):
     genos = np.add(haps.iloc[:, range(0,haps.shape[1]-1,2)].as_matrix(), haps.iloc[:, range(1,haps.shape[1]-1,2)].as_matrix())
 
     means = np.matmul(genos.T, eqtl_effect_sizes)
-    print sum(eqtl_effect_sizes)
-    print means
-    print np.unique(means)
-
     phenos = np.random.normal(means, 1, len(means))
-    print phenos
 
     return phenos
-
-def compute_eqtl_ld():
-
-    # Use PLINK to generate bim bam fam files
-    command = '''/srv/persistent/bliu2/tools/plink_1.90_beta3_linux_x86_64/plink --vcf /users/mgloud/projects/coloc_comparisons/tmp/tmp.vcf --keep-allele-order --make-bed --double-id --out /users/mgloud/projects/coloc_comparisons/tmp/tmp.plink'''
-    subprocess.check_call(command, shell=True)
-
-    # Use PLINK to generate LD score
-    command = '''/srv/persistent/bliu2/tools/plink_1.90_beta3_linux_x86_64/plink -bfile /users/mgloud/projects/coloc_comparisons/tmp/tmp.plink --r square --out /users/mgloud/projects/coloc_comparisons/tmp/tmp'''
-    subprocess.check_call(command, shell=True)
-
-    data = pd.read_csv("/users/mgloud/projects/coloc_comparisons/tmp/tmp.ld", header=None, sep="\t")
-    return data
 
 def make_sum_stats(eqtl_phenotypes):
     eqtls = call_eqtls(eqtl_phenotypes)
     gwas = run_gwas()
-    print eqtls[:5]
-    print gwas[:5]
     return (eqtls, gwas)
 
 def call_eqtls(eqtl_phenotypes):
@@ -325,21 +295,24 @@ def write_sumstats(eqtls, gwas, index):
         if "," in af:
             return 0
         af = float(af)
+        return(af)
     vcf['AF'] = vcf['INFO'].apply(ref_af)
  
     with open("/users/mgloud/projects/coloc_comparisons/output/simulations/gwas/gwas_sumstats{0}.txt".format(index), "w") as w:
-        w.write("rsid\tgenome_build\tchr\tsnp_pos\tref_allele\talt_allele\tref_af\teffect_size\tse\tpvalue\n")
+        w.write("rsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref_allele\talt_allele\teffect_af\teffect_size\tse\tzscore\tpvalue\tn_cases\tn_controls\n")
         for i in range(vcf.shape[0]):
             var = vcf.iloc[i, :]
             g = gwas[i]
-            w.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\n".format(var['ID'], "hg19", var['#CHROM'], var["POS"], var["REF"], var["ALT"], var["AF"], g[0], g[1], g[2]))
+            variant_id = "{0}_{1}_{2}_{3}_hg19".format(var['#CHROM'], var["POS"], var["REF"], var["ALT"])
+            w.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}\n".format(var['ID'], variant_id, "hg19", var['#CHROM'], var["POS"], var["REF"], var["ALT"], var["AF"], g[0], g[1], g[0] / g[1], g[2], settings["current_run"]["gwas_case_sample_size"], settings["current_run"]["gwas_control_sample_size"]))
     
     with open("/users/mgloud/projects/coloc_comparisons/output/simulations/eqtl/eqtl_sumstats{0}.txt".format(index), "w") as w:
-        w.write("rsid\tgenome_build\tchr\tsnp_pos\tref_allele\talt_allele\tref_af\teffect_size\tse\tpvalue\n")
+        w.write("rsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref_allele\talt_allele\teffect_af\teffect_size\tse\tzscore\tpvalue\tN\n")
         for i in range(vcf.shape[0]):
             var = vcf.iloc[i, :]
             e = eqtls[i]
-            w.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\n".format(var['ID'], "hg19", var['#CHROM'], var["POS"], var["REF"], var["ALT"], var["AF"], e[0], e[1], e[2]))
+            variant_id = "{0}_{1}_{2}_{3}_hg19".format(var['#CHROM'], var["POS"], var["REF"], var["ALT"])
+            w.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\n".format(var['ID'], variant_id, "hg19", var['#CHROM'], var["POS"], var["REF"], var["ALT"], 1-var["AF"], e[0], e[1], e[0] / e[1], e[2], settings["current_run"]["eqtl_sample_size"]))
 
 def write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, index):
     with open("/users/mgloud/projects/coloc_comparisons/output/simulations/answer_key.txt", "a") as a:
@@ -347,11 +320,11 @@ def write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, index):
         info = ""
         for i in range(len(gwas_effect_sizes)):
             if gwas_effect_sizes[i] != 0:
-                info += "gwas:" + str(i) + ":" + str(gwas_effect_sizes[i]) + ","
+                info += "gwas:" + settings["current_run"]["rsids"].iloc[i] + ":" + str(gwas_effect_sizes[i]) + ","
         for i in range(len(eqtl_effect_sizes)):
             if eqtl_effect_sizes[i] != 0:
-                info += "eqtl:" + str(i) + ":" + str(eqtl_effect_sizes[i]) + ","
-        a.write("{0}\t{1}\n".format(index, info))
+                info += "eqtl:" + settings["current_run"]["rsids"].iloc[i] + ":" + str(eqtl_effect_sizes[i]) + ","
+        a.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(index, info, settings["current_run"]["gwas_case_sample_size"], settings["current_run"]["gwas_control_sample_size"], settings["current_run"]["eqtl_sample_size"], len(gwas_effect_sizes)))
 
 
 if __name__ == "__main__":
