@@ -58,13 +58,17 @@ def main():
             else:
                 break
 
-        eqtl_phenotypes = get_expression_phenotypes(eqtl_effect_sizes)
+            eqtl_phenotypes = get_expression_phenotypes(eqtl_effect_sizes)
 
-        # Finally, create summary statistics
-        (eqtls, gwas) = make_sum_stats(eqtl_phenotypes)
+            # Finally, create summary statistics
+            sum_stats = make_sum_stats(eqtl_phenotypes)
+            if sum_stats == "Fail"
+                # Make sure HAPGEN2 actually succeeded, i.e. it was a valid site
+                continue
+            (eqtls, gwas) = sum_stats
 
-        write_sumstats(eqtls, gwas, i)
-        write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, i)
+            write_sumstats(eqtls, gwas, i)
+            write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, i)
 
 def get_eqtl_effect_sizes(settings, gwas_effect_sizes):
 
@@ -216,9 +220,13 @@ def run_hapgen2(settings, locus, gwas_effect_size):
     settings["current_run"]["gwas_case_sample_size"] = gwas_case_sample_size
     settings["current_run"]["eqtl_sample_size"] = eqtl_sample_size
 
-    # Then run HAPGEN2 to get genotypes 
-    subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_gwas.out -dl {0} 1 {1} {2} -n {3} {4}".format(locus[1], 10**gwas_effect_size, 10**(2*gwas_effect_size), gwas_control_sample_size, gwas_case_sample_size), shell=True)
-    subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_eqtl.out -dl {0} 1 1 1 -n {1} 1".format(locus[1], eqtl_sample_size), shell=True)
+    # Then run HAPGEN2 to get genotypes
+    # NOTE: This could be dangerous because it could lead to infinite loops
+    try:
+        subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_gwas.out -dl {0} 1 {1} {2} -n {3} {4}".format(locus[1], 10**gwas_effect_size, 10**(2*gwas_effect_size), gwas_control_sample_size, gwas_case_sample_size), shell=True)
+        subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_eqtl.out -dl {0} 1 1 1 -n {1} 1".format(locus[1], eqtl_sample_size), shell=True)
+    except:
+        return "Fail"
 
     # Write VCF to tmp file in case we need to compute LD
     vcf.to_csv('/users/mgloud/projects/coloc_comparisons/tmp/tmp.vcf', sep="\t", index=False, header=True)
