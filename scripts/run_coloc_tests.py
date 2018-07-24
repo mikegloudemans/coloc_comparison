@@ -6,9 +6,12 @@ import glob
 import subprocess
 import sys
 
+base_dir = sys.argv[1]
+num_tests = int(sys.argv[2])
+
 config_template = '''
 {{
-        "out_dir_group": "ecaviar-comparisons",
+        "out_dir_group": "ecaviar-comparisons/{2}",
 
         "selection_basis": "gwas",
 
@@ -20,12 +23,12 @@ config_template = '''
 
         "gwas_experiments": 
 	{{
-            "/users/mgloud/projects/coloc_comparisons/output/simulations/gwas/gwas_sumstats{0}.txt.gz": {{"ref": "1kgenomes", "gwas_format": "effect_size"}}
+            "{1}/hg19/gwas/gwas_sumstats{0}.txt.gz": {{"ref": "1kgenomes", "gwas_format": "effect_size"}}
 	}},
 	
 	"eqtl_experiments":	
 	{{
-            "/users/mgloud/projects/coloc_comparisons/output/simulations/eqtl/eqtl_sumstats{0}.txt.gz": {{"ref": "1kgenomes"}}
+            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": {{"ref": "1kgenomes"}}
 	}},
 
 	"methods": 
@@ -52,11 +55,15 @@ config_template = '''
 
 # For each simulated colocalization:
 
-for i in range(7):
+if base_dir[-1] == "/":
+    base_dir = base_dir[:-1]
+base_last_dir = base_dir.strip().split("/")[-1]
+
+for i in range(num_tests):
     
     # Dump the config template to a file
     with open("/users/mgloud/projects/coloc_comparisons/tmp/ecaviar.config", "w") as w:
-        w.write(config_template.format(i))
+        w.write(config_template.format(i, base_dir, base_last_dir))
 
     # Get it going
     subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/ecaviar.config", shell=True)
