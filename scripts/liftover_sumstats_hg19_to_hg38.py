@@ -4,11 +4,12 @@
 import glob
 import subprocess
 import sys
+import gzip
 
 for i in range(1250):
     print i
-    eqtl_file = "/users/mgloud/projects/coloc_comparisons/output/simulations/eqtl/eqtl_sumstats{0}.txt".format(i)
-    gwas_file = "/users/mgloud/projects/coloc_comparisons/output/simulations/gwas/gwas_sumstats{0}.txt".format(i)
+    eqtl_file = "/users/mgloud/projects/coloc_comparisons/output/simulations/eqtl/eqtl_sumstats{0}.txt.gz".format(i)
+    gwas_file = "/users/mgloud/projects/coloc_comparisons/output/simulations/gwas/gwas_sumstats{0}.txt.gz".format(i)
 
     #
     # eQTL
@@ -16,7 +17,7 @@ for i in range(1250):
 
     # Write liftable file
     with open("/users/mgloud/projects/coloc_comparisons/tmp/liftable.bed", "w") as w:
-        with open(eqtl_file) as f:
+        with gzip.open(eqtl_file) as f:
             f.readline()
             for line in f:
                 data = line.strip().split()
@@ -31,7 +32,7 @@ for i in range(1250):
 
     # Reformat it one more time
 
-    with open("/users/mgloud/projects/coloc_comparisons/output/simulations/hg38/eqtl/eqtl_sumstats{0}.txt".format(i), "w") as w:
+    with gzip.open("/users/mgloud/projects/coloc_comparisons/output/simulations/hg38/eqtl/eqtl_sumstats{0}.txt".format(i), "w") as w:
         w.write("rsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref_allele\talt_allele\teffect_af\teffect_size\tse\tzscore\tpvalue\tN\n")
         with open("/users/mgloud/projects/coloc_comparisons/tmp/lifted_and_joined.bed") as f:
             for line in f:
@@ -46,7 +47,7 @@ for i in range(1250):
 
     # Write liftable file
     with open("/users/mgloud/projects/coloc_comparisons/tmp/liftable.bed", "w") as w:
-        with open(gwas_file) as f:
+        with gzip.open(gwas_file) as f:
             f.readline()
             for line in f:
                 data = line.strip().split()
@@ -61,7 +62,7 @@ for i in range(1250):
 
     # Reformat it one more time
 
-    with open("/users/mgloud/projects/coloc_comparisons/output/simulations/hg38/gwas/gwas_sumstats{0}.txt".format(i), "w") as w:
+    with gzip.open("/users/mgloud/projects/coloc_comparisons/output/simulations/hg38/gwas/gwas_sumstats{0}.txt".format(i), "w") as w:
         w.write("rsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref_allele\talt_allele\teffect_af\teffect_size\tse\tzscore\tpvalue\tn_cases\tn_controls\n")
         with open("/users/mgloud/projects/coloc_comparisons/tmp/lifted_and_joined.bed") as f:
             for line in f:

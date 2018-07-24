@@ -16,13 +16,26 @@ if sys.version_info[0] < 3:
 else:
    from io import StringIO
 from scipy import stats
+from shutil import copyfile
+import datetime
 
 config_file = sys.argv[1]
 settings = config.load_config(config_file)
 
-def main():
+now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+if "out_dir_group" in settings:
+    base_output_dir = "/users/mgloud/projects/coloc_comparisons/output/simulations/{0}/{1}".format(settings["out_dir_group"], now)
+else:
+    base_output_dir = "/users/mgloud/projects/coloc_comparisons/output/simulations/{0}".format(now)
+subprocess.call("mkdir -p {0}/hg19/gwas".format(base_output_dir), shell=True)
+subprocess.call("mkdir -p {0}/hg19/eqtl".format(base_output_dir), shell=True)
+subprocess.call("mkdir -p {0}/hg38/gwas".format(base_output_dir), shell=True)
+subprocess.call("mkdir -p {0}/hg38/eqtl".format(base_output_dir), shell=True)
 
-    with open("/users/mgloud/projects/coloc_comparisons/output/simulations/answer_key.txt", "w") as w:
+copyfile(config_file, "{0}/settings_used.config".format(base_output_dir))
+
+def main():
+    with open("{0}/answer_key.txt".format(base_output_dir), "w") as w:
         w.write("test_case\tcausal_variants\tcases_n\tcontrols_n\teqtl_n\tsnps_n\n")
 
     # Get possible GWAS loci upfront, so we don't
@@ -47,7 +60,8 @@ def main():
             # Get all haplotypes using HAPGEN2
             gwas_effect_sizes = run_hapgen2(settings, locus, gwas_effect_size)
             settings["current_run"]["gwas_effect_sizes"] = gwas_effect_sizes
-            if gwas_effect_sizes == "Bad variant":
+            if gwas_effect_sizes == "Bad variant" or gwas_effect_sizes == "Fail":
+                # Make sure HAPGEN2 actually succeeded, i.e. it was a valid site
                 continue
 
             # Get effect sizes, using LD pairings at restrictions
@@ -55,20 +69,17 @@ def main():
             settings["current_run"]["eqtl_effect_sizes"] = eqtl_effect_sizes
             if eqtl_effect_sizes == "Impossible LD matrix":
                 continue
-            else:
-                break
 
             eqtl_phenotypes = get_expression_phenotypes(eqtl_effect_sizes)
 
             # Finally, create summary statistics
             sum_stats = make_sum_stats(eqtl_phenotypes)
-            if sum_stats == "Fail"
-                # Make sure HAPGEN2 actually succeeded, i.e. it was a valid site
-                continue
             (eqtls, gwas) = sum_stats
 
             write_sumstats(eqtls, gwas, i)
             write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, i)
+
+            break
 
 def get_eqtl_effect_sizes(settings, gwas_effect_sizes):
 
@@ -298,32 +309,38 @@ def write_sumstats(eqtls, gwas, index):
     vcf = pd.read_csv("/users/mgloud/projects/coloc_comparisons/tmp/tmp.vcf", sep="\t")
 
     # Filter down to a min MAF of 0.05 for now
-    def ref_af(x):
+    def alt_af(x):
         af = x.split("AF=")[1].split(";")[0]
         if "," in af:
             return 0
         af = float(af)
         return(af)
-    vcf['AF'] = vcf['INFO'].apply(ref_af)
+    vcf['AF'] = vcf['INFO'].apply(alt_af)
  
-    with open("/users/mgloud/projects/coloc_comparisons/output/simulations/gwas/gwas_sumstats{0}.txt".format(index), "w") as w:
-        w.write("rsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref_allele\talt_allele\teffect_af\teffect_size\tse\tzscore\tpvalue\tn_cases\tn_controls\n")
+    with open("{0}/hg19/gwas/gwas_sumstats{1}.txt".format(base_output_dir, index), "w") as w:
+        w.write("rsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref\talt\teffect_af\tbeta\tse\tzscore\tpvalue\tn_cases\tn_controls\n")
         for i in range(vcf.shape[0]):
             var = vcf.iloc[i, :]
             g = gwas[i]
             variant_id = "{0}_{1}_{2}_{3}_hg19".format(var['#CHROM'], var["POS"], var["REF"], var["ALT"])
             w.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}\n".format(var['ID'], variant_id, "hg19", var['#CHROM'], var["POS"], var["REF"], var["ALT"], var["AF"], g[0], g[1], g[0] / g[1], g[2], settings["current_run"]["gwas_case_sample_size"], settings["current_run"]["gwas_control_sample_size"]))
     
-    with open("/users/mgloud/projects/coloc_comparisons/output/simulations/eqtl/eqtl_sumstats{0}.txt".format(index), "w") as w:
-        w.write("rsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref_allele\talt_allele\teffect_af\teffect_size\tse\tzscore\tpvalue\tN\n")
+    with open("{0}/hg19/eqtl/eqtl_sumstats{1}.txt".format(base_output_dir, index), "w") as w:
+        w.write("feature\trsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref\talt\teffect_af\tbeta\tse\tzscore\tpvalue\tN\n")
         for i in range(vcf.shape[0]):
             var = vcf.iloc[i, :]
             e = eqtls[i]
             variant_id = "{0}_{1}_{2}_{3}_hg19".format(var['#CHROM'], var["POS"], var["REF"], var["ALT"])
-            w.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\n".format(var['ID'], variant_id, "hg19", var['#CHROM'], var["POS"], var["REF"], var["ALT"], 1-var["AF"], e[0], e[1], e[0] / e[1], e[2], settings["current_run"]["eqtl_sample_size"]))
+            w.write("nameless_gene\t{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\n".format(var['ID'], variant_id, "hg19", var['#CHROM'], var["POS"], var["REF"], var["ALT"], var["AF"], e[0], e[1], e[0] / e[1], e[2], settings["current_run"]["eqtl_sample_size"]))
+
+    # bgzip and tabix
+    subprocess.check_call("bgzip -f {0}/hg19/gwas/gwas_sumstats{1}.txt".format(base_output_dir, index), shell=True)
+    subprocess.check_call("bgzip -f {0}/hg19/eqtl/eqtl_sumstats{1}.txt".format(base_output_dir, index), shell=True)
+    subprocess.check_call("tabix -f -S 1 -s 4 -b 5 -e 5 {0}/hg19/gwas/gwas_sumstats{1}.txt.gz".format(base_output_dir, index), shell=True)
+    subprocess.check_call("tabix -f -S 1 -s 5 -b 6 -e 6 {0}/hg19/eqtl/eqtl_sumstats{1}.txt.gz".format(base_output_dir, index), shell=True)
 
 def write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, index):
-    with open("/users/mgloud/projects/coloc_comparisons/output/simulations/answer_key.txt", "a") as a:
+    with open("{0}/answer_key.txt".format(base_output_dir), "a") as a:
         # Write GWAS/eQTL variants, effect sizes...might also add more info later
         info = ""
         for i in range(len(gwas_effect_sizes)):
