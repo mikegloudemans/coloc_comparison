@@ -81,6 +81,9 @@ def main():
 
             break
 
+    # liftOver to hg38
+    run_liftover(settings)
+
 def get_eqtl_effect_sizes(settings, gwas_effect_sizes):
 
     eqtl_effect_sizes = [0] * len(gwas_effect_sizes)
@@ -350,6 +353,9 @@ def write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, index):
             if eqtl_effect_sizes[i] != 0:
                 info += "eqtl:" + settings["current_run"]["rsids"].iloc[i] + ":" + str(eqtl_effect_sizes[i]) + ","
         a.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(index, info, settings["current_run"]["gwas_case_sample_size"], settings["current_run"]["gwas_control_sample_size"], settings["current_run"]["eqtl_sample_size"], len(gwas_effect_sizes)))
+
+def run_liftover(settings):
+    subprocess.check_call("python /users/mgloud/projects/coloc_comparisons/scripts/liftover_sumstats_hg19_to_hg38.py {0} {1}".format(basedir, settings["total_test_sites"]), shell=True)
 
 
 if __name__ == "__main__":
