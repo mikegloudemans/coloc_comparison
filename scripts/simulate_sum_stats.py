@@ -285,6 +285,9 @@ def call_eqtls(eqtl_phenotypes):
     for i in range(genos.shape[0]):
         predictors = genos[i,:]
         slope, intercept, r_value, p_value, std_err = stats.linregress(predictors, eqtl_phenotypes)
+        if np.isnan(slope):
+            slope = 0
+            std_err = 1
         eqtls.append((slope, std_err, p_value))
     return eqtls
 
@@ -302,6 +305,10 @@ def run_gwas():
         predictors = list(case_genos[i,:]) + list(control_genos[i,:])
         gwas_response = [1] * case_genos.shape[1] + [0] * control_genos.shape[1]
         slope, intercept, r_value, p_value, std_err = stats.linregress(predictors, gwas_response)
+        # Catch issues in cases where one allele never occurred
+        if np.isnan(slope):
+            slope = 0
+            std_err = 1
         gwas.append((slope, std_err, p_value))
     return gwas
 
