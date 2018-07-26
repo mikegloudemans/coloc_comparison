@@ -11,7 +11,7 @@ num_tests = int(sys.argv[2])
 
 config_template = '''
 {{
-        "out_dir_group": "ecaviar-comparisons/{2}",
+        "out_dir_group": "finemap-comparisons/{2}",
 
         "selection_basis": "gwas",
 
@@ -63,11 +63,11 @@ for i in range(num_tests):
 #for i in [9]:
     
     # Dump the config template to a file
-    with open("/users/mgloud/projects/coloc_comparisons/tmp/ecaviar.config", "w") as w:
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/finemap.config", "w") as w:
         w.write(config_template.format(i, base_dir, base_last_dir))
 
     # Get it going
-    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/ecaviar.config", shell=True)
+    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/finemap.config", shell=True)
 
 # (Later: Separate script)
 

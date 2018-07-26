@@ -11,7 +11,7 @@ num_tests = int(sys.argv[2])
 
 config_template = '''
 {{
-        "out_dir_group": "coloc-comparisons/{2}",
+        "out_dir_group": "rtc-comparisons/{2}",
 
         "selection_basis": "snps_from_list",
 
@@ -26,17 +26,17 @@ config_template = '''
 
         "gwas_experiments": 
 	{{
-            "{1}/hg19/gwas/gwas_sumstats{0}.txt.gz": {{"ref": "1kgenomes", "gwas_format": "effect_size", "type": "cc", "N": {3}, "s": "{4}"}}
+            "{1}/hg19/gwas/gwas_sumstats{0}.txt.gz": {{"ref": "1kgenomes", "gwas_format": "effect_size"}}
 	}},
 	
 	"eqtl_experiments":	
 	{{
-            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": {{"ref": "1kgenomes", "N": {5}}}
+            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": {{"rtc-ref": "{3}", "rtc-phenos": "{4}"}}
 	}},
 
 	"methods": 
 	{{
-		"coloc":{{}}
+                "rtc":{{}}
 	}},
 
         "ref_genomes": 
@@ -72,25 +72,18 @@ with open(base_dir + "/answer_key.txt") as f:
         answers[int(data[0])] = {}
         answers[int(data[0])]["seed_chrom"] = int(data[1])
         answers[int(data[0])]["seed_pos"] = int(data[2])
-        answers[int(data[0])]["n_cases"] = int(data[4])
-        answers[int(data[0])]["n_controls"] = int(data[5])
-        answers[int(data[0])]["n_eqtl"] = int(data[6])
 
 for i in range(num_tests):
     
-    with open("/users/mgloud/projects/coloc_comparisons/tmp/coloc_snp_list.txt", "w") as w:
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/rtc_snp_list.txt", "w") as w:
         w.write("{0}\t{1}\n".format(answers[i]["seed_chrom"], answers[i]["seed_pos"]))
 
-    n_gwas = answers[i]["n_cases"] + answers[i]["n_controls"]
-    cc_ratio_gwas = answers[i]["n_cases"] * 1.0 / (answers[i]["n_cases"] + answers[i]["n_controls"])
-    n_eqtl = answers[i]["n_eqtl"]
-
     # Dump the config template to a file
-    with open("/users/mgloud/projects/coloc_comparisons/tmp/coloc.config", "w") as w:
-        w.write(config_template.format(i, base_dir, base_last_dir, n_gwas, cc_ratio_gwas, n_eqtl))
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/rtc.config", "w") as w:
+        w.write(config_template.format(i, base_dir, base_last_dir, "{0}/hg19/eqtl/eqtl_genotypes{1}.vcf".format(base_dir, i), "{0}/hg19/eqtl/eqtl_phenotypes{1}.bed".format(base_dir, i)))
 
     # Get it going
-    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/coloc.config", shell=True)
+    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/rtc.config", shell=True)
 
 # (Later: Separate script)
 

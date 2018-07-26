@@ -11,12 +11,12 @@ num_tests = int(sys.argv[2])
 
 config_template = '''
 {{
-        "out_dir_group": "coloc-comparisons/{2}",
+        "out_dir_group": "ecaviar-comparisons/{2}",
 
         "selection_basis": "snps_from_list",
 
 	"snp_list_file":
-                "/users/mgloud/projects/coloc_comparisons/tmp/coloc_snp_list.txt",
+                "/users/mgloud/projects/coloc_comparisons/tmp/ecaviar_snp_list.txt",
 
         "selection_thresholds":
         {{
@@ -26,17 +26,17 @@ config_template = '''
 
         "gwas_experiments": 
 	{{
-            "{1}/hg19/gwas/gwas_sumstats{0}.txt.gz": {{"ref": "1kgenomes", "gwas_format": "effect_size", "type": "cc", "N": {3}, "s": "{4}"}}
+            "{1}/hg19/gwas/gwas_sumstats{0}.txt.gz": {{"ref": "1kgenomes", "gwas_format": "effect_size"}}
 	}},
 	
 	"eqtl_experiments":	
 	{{
-            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": {{"ref": "1kgenomes", "N": {5}}}
+            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": {{"ref": "1kgenomes"}}
 	}},
 
 	"methods": 
 	{{
-		"coloc":{{}}
+		"ecaviar":{{}}
 	}},
 
         "ref_genomes": 
@@ -72,33 +72,16 @@ with open(base_dir + "/answer_key.txt") as f:
         answers[int(data[0])] = {}
         answers[int(data[0])]["seed_chrom"] = int(data[1])
         answers[int(data[0])]["seed_pos"] = int(data[2])
-        answers[int(data[0])]["n_cases"] = int(data[4])
-        answers[int(data[0])]["n_controls"] = int(data[5])
-        answers[int(data[0])]["n_eqtl"] = int(data[6])
 
 for i in range(num_tests):
     
-    with open("/users/mgloud/projects/coloc_comparisons/tmp/coloc_snp_list.txt", "w") as w:
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/ecaviar_snp_list.txt", "w") as w:
         w.write("{0}\t{1}\n".format(answers[i]["seed_chrom"], answers[i]["seed_pos"]))
 
-    n_gwas = answers[i]["n_cases"] + answers[i]["n_controls"]
-    cc_ratio_gwas = answers[i]["n_cases"] * 1.0 / (answers[i]["n_cases"] + answers[i]["n_controls"])
-    n_eqtl = answers[i]["n_eqtl"]
-
     # Dump the config template to a file
-    with open("/users/mgloud/projects/coloc_comparisons/tmp/coloc.config", "w") as w:
-        w.write(config_template.format(i, base_dir, base_last_dir, n_gwas, cc_ratio_gwas, n_eqtl))
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/ecaviar.config", "w") as w:
+        w.write(config_template.format(i, base_dir, base_last_dir))
 
     # Get it going
-    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/coloc.config", shell=True)
+    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/ecaviar.config", shell=True)
 
-# (Later: Separate script)
-
-# Parse eCAVIAR results file to see what we find
-
-# Compile all results into a sort of ROC curve;
-# probably want to do this in R
-
-# Can also stratify results based on the magnitude of
-# effect sizes and stuff, see how much we're sensitive to
-# parameters like that
