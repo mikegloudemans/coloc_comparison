@@ -1,5 +1,12 @@
 # Load all results, concatenate them
 
+# NOTE: TODO:
+# - Right now, we skip some test loci simply because the pipeline
+#   sees a top SNP somewhere on the edge of the region and anchors on that SNP.
+#   For most methods this means the site is skipped.
+#   I need to fix it so that we always anchor on the central (original GWAS) SNP.
+#   This seed SNP is now being recorded at the time of the simulations
+
 require(pROC)
 
 main = function()

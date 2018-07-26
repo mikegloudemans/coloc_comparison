@@ -36,7 +36,7 @@ copyfile(config_file, "{0}/settings_used.config".format(base_output_dir))
 
 def main():
     with open("{0}/answer_key.txt".format(base_output_dir), "w") as w:
-        w.write("test_case\tcausal_variants\tcases_n\tcontrols_n\teqtl_n\tsnps_n\n")
+        w.write("test_case\tseed_chrom\tseed_pos\tcausal_variants\tcases_n\tcontrols_n\teqtl_n\tsnps_n\n")
 
     # Get possible GWAS loci upfront, so we don't
     # waste any more time on this
@@ -77,7 +77,7 @@ def main():
             (eqtls, gwas) = sum_stats
 
             write_sumstats(eqtls, gwas, i)
-            write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, i)
+            write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, locus, i)
 
             break
 
@@ -349,7 +349,7 @@ def write_sumstats(eqtls, gwas, index):
     subprocess.check_call("tabix -f -S 1 -s 4 -b 5 -e 5 {0}/hg19/gwas/gwas_sumstats{1}.txt.gz".format(base_output_dir, index), shell=True)
     subprocess.check_call("tabix -f -S 1 -s 5 -b 6 -e 6 {0}/hg19/eqtl/eqtl_sumstats{1}.txt.gz".format(base_output_dir, index), shell=True)
 
-def write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, index):
+def write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, locus, index):
     with open("{0}/answer_key.txt".format(base_output_dir), "a") as a:
         # Write GWAS/eQTL variants, effect sizes...might also add more info later
         info = ""
@@ -359,7 +359,7 @@ def write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, index):
         for i in range(len(eqtl_effect_sizes)):
             if eqtl_effect_sizes[i] != 0:
                 info += "eqtl:" + settings["current_run"]["rsids"].iloc[i] + ":" + str(eqtl_effect_sizes[i]) + ","
-        a.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(index, info, settings["current_run"]["gwas_case_sample_size"], settings["current_run"]["gwas_control_sample_size"], settings["current_run"]["eqtl_sample_size"], len(gwas_effect_sizes)))
+        a.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(index, locus[0], locus[1], info, settings["current_run"]["gwas_case_sample_size"], settings["current_run"]["gwas_control_sample_size"], settings["current_run"]["eqtl_sample_size"], len(gwas_effect_sizes)))
 
 def run_liftover(settings):
     subprocess.check_call("python /users/mgloud/projects/coloc_comparisons/scripts/liftover_sumstats_hg19_to_hg38.py {0} {1}".format(basedir, settings["total_test_sites"]), shell=True)

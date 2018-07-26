@@ -13,7 +13,10 @@ config_template = '''
 {{
         "out_dir_group": "coloc-comparisons/{2}",
 
-        "selection_basis": "gwas",
+        "selection_basis": "snps_from_list",
+
+	"snp_list_file":
+                "/users/mgloud/projects/coloc_comparisons/tmp/snp_list.txt",
 
         "selection_thresholds":
         {{
@@ -67,12 +70,17 @@ with open(base_dir + "/answer_key.txt") as f:
     for line in f:
         data = line.strip().split("\t")
         answers[int(data[0])] = {}
-        answers[int(data[0])]["n_cases"] = int(data[2])
-        answers[int(data[0])]["n_controls"] = int(data[3])
-        answers[int(data[0])]["n_eqtl"] = int(data[4])
+        answers[int(data[0])]["seed_chrom"] = int(data[1])
+        answers[int(data[0])]["seed_pos"] = int(data[2])
+        answers[int(data[0])]["n_cases"] = int(data[4])
+        answers[int(data[0])]["n_controls"] = int(data[5])
+        answers[int(data[0])]["n_eqtl"] = int(data[6])
 
 for i in range(num_tests):
     
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/snp_list.txt", "w") as w:
+        w.write("{0}\t{1}\n".format(answers[i]["seed_chrom"], answers[i]["seed_pos"]))
+
     n_gwas = answers[i]["n_cases"] + answers[i]["n_controls"]
     cc_ratio_gwas = answers[i]["n_cases"] * 1.0 / (answers[i]["n_cases"] + answers[i]["n_controls"])
     n_eqtl = answers[i]["n_eqtl"]
