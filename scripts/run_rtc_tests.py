@@ -31,7 +31,7 @@ config_template = '''
 	
 	"eqtl_experiments":	
 	{{
-            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": {{"rtc-ref": "{3}", "rtc-phenos": "{4}"}}
+            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": {{"rtc_genos": "{3}", "rtc_phenos": "{4}"}}
 	}},
 
 	"methods": 

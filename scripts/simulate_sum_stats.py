@@ -78,6 +78,8 @@ def main():
 
             write_sumstats(eqtls, gwas, i)
             write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, locus, i)
+            write_expression_phenotypes(eqtl_phenotypes, i, locus)
+            write_genotypes_as_vcf(i, locus)
 
             break
 
@@ -269,6 +271,46 @@ def get_expression_phenotypes(eqtl_effect_sizes):
 
     return phenos
 
+def write_expression_phenotypes(phenos, index, locus):
+    # We do this because RTC needs to re-call eQTLs with various SNPs regressed out
+    with open("{0}/hg19/eqtl/eqtl_phenotypes{1}.bed".format(base_output_dir, index), "w") as w:
+
+        header = "#chr\tstart\tend\tgene\tlength\tstrand\t" + "\t".join(["ID" + str(i) for i in range(len(phenos))]) + "\n"
+        w.write(header)
+
+        # Now put in the phenotypes for our fake gene
+        w.write("{0}\t{1}\t{2}\tnameless_gene\t500\t+\t".format(locus[0], locus[1], int(locus[1]) + 500))
+        w.write("\t".join([str(p) for p in phenos]))
+        w.write("\n")
+
+    # bgzip and tabix it
+    subprocess.check_call("bgzip -f {0}/hg19/eqtl/eqtl_phenotypes{1}.bed".format(base_output_dir, index), shell=True)
+    subprocess.check_call("tabix -f -S 1 -s 1 -b 2 -e 3 {0}/hg19/eqtl/eqtl_phenotypes{1}.bed.gz".format(base_output_dir, index), shell=True)
+
+def write_genotypes_as_vcf(index, locus):
+    
+    metadata = pd.read_csv("/users/mgloud/projects/coloc_comparisons/tmp/hapgen2_eqtl.out.controls.gen", sep=" ", header=None)
+    haps = pd.read_csv("/users/mgloud/projects/coloc_comparisons/tmp/hapgen2_eqtl.out.controls.haps", sep=" ", header=None)
+    
+    # We do this because RTC needs to re-call eQTLs with various SNPs regressed out
+    with open("{0}/hg19/eqtl/eqtl_genotypes{1}.vcf".format(base_output_dir, index), "w") as w:
+
+        header = "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t" + "\t".join(["ID" + str(int(i)) for i in range(haps.shape[1] / 2)]) + "\n"
+        w.write(header)
+
+        # Now put in our simulated genotypes
+
+
+        for i in range(metadata.shape[0]):
+            w.write("{0}\t{1}\t{2}\t{3}\t{4}\t100\tPASS\tNONE\tGT".format(locus[0], metadata.iloc[i,2], metadata.iloc[i,1], metadata.iloc[i,3], metadata.iloc[i,4]))
+            for j in range(haps.shape[1] / 2):
+                w.write("\t" + "|".join([str(s) for s in list(haps.iloc[i,2*j:(2*(j+1))])]))
+            w.write("\n")
+
+    # bgzip and tabix it
+    subprocess.check_call("bgzip -f {0}/hg19/eqtl/eqtl_genotypes{1}.vcf".format(base_output_dir, index), shell=True)
+    subprocess.check_call("tabix -f -S 1 -s 1 -b 2 -e 2 {0}/hg19/eqtl/eqtl_genotypes{1}.vcf.gz".format(base_output_dir, index), shell=True)
+
 def make_sum_stats(eqtl_phenotypes):
     eqtls = call_eqtls(eqtl_phenotypes)
     gwas = run_gwas()
@@ -313,8 +355,6 @@ def run_gwas():
     return gwas
 
 def write_sumstats(eqtls, gwas, index):
-
-
     #header = subprocess.check_output("cat /users/mgloud/projects/coloc_comparisons/tmp/tmp.vcf 2> /dev/null | grep \\#CHROM", shell=True).strip().split()
     vcf = pd.read_csv("/users/mgloud/projects/coloc_comparisons/tmp/tmp.vcf", sep="\t")
 
