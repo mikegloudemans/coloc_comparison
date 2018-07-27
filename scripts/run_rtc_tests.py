@@ -16,7 +16,7 @@ config_template = '''
         "selection_basis": "snps_from_list",
 
 	"snp_list_file":
-                "/users/mgloud/projects/coloc_comparisons/tmp/coloc_snp_list.txt",
+                "/users/mgloud/projects/coloc_comparisons/tmp/rtc_snp_list.txt",
 
         "selection_thresholds":
         {{
@@ -80,7 +80,7 @@ for i in range(num_tests):
 
     # Dump the config template to a file
     with open("/users/mgloud/projects/coloc_comparisons/tmp/rtc.config", "w") as w:
-        w.write(config_template.format(i, base_dir, base_last_dir, "{0}/hg19/eqtl/eqtl_genotypes{1}.vcf".format(base_dir, i), "{0}/hg19/eqtl/eqtl_phenotypes{1}.bed".format(base_dir, i)))
+        w.write(config_template.format(i, base_dir, base_last_dir, "{0}/hg19/eqtl/eqtl_genotypes{1}.vcf.gz".format(base_dir, i), "{0}/hg19/eqtl/eqtl_phenotypes{1}.bed.gz".format(base_dir, i)))
 
     # Get it going
     subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/rtc.config", shell=True)

@@ -279,7 +279,7 @@ def write_expression_phenotypes(phenos, index, locus):
         w.write(header)
 
         # Now put in the phenotypes for our fake gene
-        w.write("{0}\t{1}\t{2}\tnameless_gene\t500\t+\t".format(locus[0], locus[1], int(locus[1]) + 500))
+        w.write("chr{0}\t{1}\t{2}\tnameless_gene\t500\t+\t".format(locus[0], locus[1], int(locus[1]) + 500))
         w.write("\t".join([str(p) for p in phenos]))
         w.write("\n")
 
@@ -295,16 +295,18 @@ def write_genotypes_as_vcf(index, locus):
     # We do this because RTC needs to re-call eQTLs with various SNPs regressed out
     with open("{0}/hg19/eqtl/eqtl_genotypes{1}.vcf".format(base_output_dir, index), "w") as w:
 
-        header = "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t" + "\t".join(["ID" + str(int(i)) for i in range(haps.shape[1] / 2)]) + "\n"
+        w.write("##fileformat=VCFv4.1\n") # This is essential; otherwise QTLtools will not work
+        header = "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t" + "\t".join(["ID" + str(i) for i in range(haps.shape[1] / 2)]) + "\n"
         w.write(header)
 
         # Now put in our simulated genotypes
 
-
+        # NOTE: For large sample sizes this can be incredibly slow.
+        # Should find a faster way, or limit this part to eQTLs w/ smaller sample sizes.
         for i in range(metadata.shape[0]):
-            w.write("{0}\t{1}\t{2}\t{3}\t{4}\t100\tPASS\tNONE\tGT".format(locus[0], metadata.iloc[i,2], metadata.iloc[i,1], metadata.iloc[i,3], metadata.iloc[i,4]))
+            w.write("chr{0}\t{1}\t{0}_{1}\t{2}\t{3}\t100\tPASS\tNONE\tGT".format(locus[0], metadata.iloc[i,2], metadata.iloc[i,3], metadata.iloc[i,4]))
             for j in range(haps.shape[1] / 2):
-                w.write("\t" + "|".join([str(s) for s in list(haps.iloc[i,2*j:(2*(j+1))])]))
+                w.write("\t" + "|".join([str(int(s)) for s in list(haps.iloc[i,2*j:(2*(j+1))])]))
             w.write("\n")
 
     # bgzip and tabix it
