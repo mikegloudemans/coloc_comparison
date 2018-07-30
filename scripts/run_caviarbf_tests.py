@@ -62,7 +62,7 @@ if base_dir[-1] == "/":
     base_dir = base_dir[:-1]
 base_last_dir = base_dir.strip().split("/")[-1]
 
-subprocess.call("rm -rf /users/mgloud/projects/brain_gwas/output/coloc-comparisons/{0}".format(base_last_dir), shell=True)
+subprocess.call("rm -rf /users/mgloud/projects/brain_gwas/output/caviarbf-comparisons/{0}".format(base_last_dir), shell=True)
 
 answers = {}
 with open(base_dir + "/answer_key.txt") as f:

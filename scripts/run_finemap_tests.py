@@ -59,6 +59,8 @@ if base_dir[-1] == "/":
     base_dir = base_dir[:-1]
 base_last_dir = base_dir.strip().split("/")[-1]
 
+subprocess.call("rm -rf /users/mgloud/projects/brain_gwas/output/finemap-comparisons/{0}".format(base_last_dir), shell=True)
+
 for i in range(num_tests):
 #for i in [9]:
     

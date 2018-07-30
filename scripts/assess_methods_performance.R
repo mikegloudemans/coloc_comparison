@@ -11,27 +11,39 @@ require(pROC)
 
 main = function()
 {
-	timestamp = "2018-07-24_18-07-19"
-	ecaviar_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/ecaviar-comparisons/", timestamp)
-	coloc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/coloc-comparisons/2018-07-24_18-07-19")
+	timestamp = "2018-07-27_15-23-15"
+	finemap_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/finemap-comparisons/", timestamp)
+	coloc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/coloc-comparisons/", timestamp)
+	rtc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/rtc-comparisons/", timestamp)
 	answer_file = paste0("/users/mgloud/projects/coloc_comparisons/output/simulations/", timestamp, "/answer_key.txt")
 
-
-	# eCAVIAR/FINEMAP (should actually run both of them, because why not)
-	# Get CLPP scores and actual answers for each test
-	ecaviar_results = get_ecaviar_results(ecaviar_base_dir) 
-	clpp = ecaviar_results$clpp
-	clpp_mod = ecaviar_results$clpp_mod
-	problems = gsub("gwas_sumstats", "", ecaviar_results$base_gwas_file)
-	problems = as.numeric(gsub("_txt_gz", "", problems))
 	answer_key = get_answer_key(answer_file)
+
+	#
+	# Part 1: Evaluate individual methods on full data set
+	#
+
+	#
+	# FINEMAP
+	#
+
+	# Get CLPP scores and actual answers for each test
+	finemap_results = get_finemap_results(finemap_base_dir) 
+	clpp = finemap_results$clpp
+	clpp_mod = finemap_results$clpp_mod
+	problems = gsub("gwas_sumstats", "", finemap_results$base_gwas_file)
+	problems = as.numeric(gsub("_txt_gz", "", problems))
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 	
-	# Make eCAVIAR ROC
+	# Make FINEMAP ROC
 	roc(answers, clpp, plot=TRUE)
 	roc(answers, clpp_mod, plot=TRUE)
+	plot(roc(answers, clpp), print.auc = TRUE, col = "black", add = TRUE)
+	plot(roc(answers, clpp_mod), print.auc = TRUE, col = "red", add = TRUE)
 
-	# Now do it with coloc
+	#
+	# COLOC
+	#
 	coloc_results = get_coloc_results(coloc_base_dir)
 	h4pp = coloc_results$clpp_h4
 	problems = gsub("eqtl_sumstats", "", coloc_results$eqtl_file)
@@ -39,7 +51,67 @@ main = function()
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 
 	# Make COLOC ROC
-	roc(answers, h4pp, plot=TRUE)
+	plot(roc(answers, h4pp), print.auc = TRUE, col = "blue", add=TRUE)
+
+	#
+	# RTC
+	#
+	rtc_results = get_rtc_results(rtc_base_dir)
+	rtc = rtc_results$rtc_score
+	problems = gsub("eqtl_sumstats", "", rtc_results$eqtl_file)
+	problems = as.numeric(gsub("_txt_gz", "", problems))
+	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
+	
+	# Make RTC ROC
+	plot(roc(answers, rtc), print.auc = TRUE, col = "green", add = TRUE)
+
+
+	# 
+	# Part 1.5: Try an ensemble method
+	#
+
+	# Get the test sites for which all methods were tried.	
+	# NOTE: Technically I should only be comparing on these anyway,
+	# unless I can explain why certain sites weren't tested with certain algorithms.
+	# Fix that later
+	finemap_results = get_finemap_results(finemap_base_dir) 
+	finemap_problems = gsub("gwas_sumstats", "", finemap_results$base_gwas_file)
+	finemap_problems = as.numeric(gsub("_txt_gz", "", finemap_problems))
+	coloc_results = get_coloc_results(coloc_base_dir)
+	coloc_problems = gsub("eqtl_sumstats", "", coloc_results$eqtl_file)
+	coloc_problems = as.numeric(gsub("_txt_gz", "", coloc_problems))
+	rtc_results = get_rtc_results(rtc_base_dir)
+	rtc_problems = gsub("eqtl_sumstats", "", rtc_results$eqtl_file)
+	rtc_problems = as.numeric(gsub("_txt_gz", "", rtc_problems))
+
+	problems = rtc_problems[rtc_problems %in% finemap_problems]
+	problems = problems[problems %in% coloc_problems]
+	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
+
+	# For now we're basically just ranking the results of each method and combining 
+	# the ranks
+	# In the future though, there are ways we can get more nuance than that
+	# if one method is very confident
+	h4pp = coloc_results$clpp_h4[match(problems, coloc_problems)]
+	h4pp = scale(h4pp)
+	rtc = rtc_results$rtc_score[match(problems, rtc_problems)]
+	rtc = scale(rtc)
+	clpp = finemap_results$clpp[match(problems, finemap_problems)]
+	clpp = scale(clpp)
+	clpp_mod = finemap_results$clpp_mod[match(problems, finemap_problems)]
+	clpp_mod = scale(clpp_mod)
+
+	ensemble = h4pp + rtc + clpp + clpp_mod
+	ensemble = ensemble / max(ensemble)
+	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE)
+	
+	# Naive ensemble performance is comparable with the best methods
+	
+	#
+	# Part 2: Modify parameters
+	#
+
+	stopifnot(FALSE)
 	
 	# Now let's try it with a few other adjustments (will look better once
 	# we have more sites though...)
@@ -57,12 +129,12 @@ main = function()
 		gwas_cutoff = cutoff
 		eqtl_cutoff = cutoff
 
-		dup_ecaviar_results = ecaviar_results
-		dup_ecaviar_results$adjusted = pmin(0.0000001 * dup_ecaviar_results$X.log_eqtl_pval, 0.0000001 * dup_ecaviar_results$X.log_gwas_pval)
-		dup_ecaviar_results[(dup_ecaviar_results$X.log_eqtl_pval < eqtl_cutoff) | (dup_ecaviar_results$X.log_gwas_pval < gwas_cutoff),]$clpp = dup_ecaviar_results[(dup_ecaviar_results$X.log_eqtl_pval < eqtl_cutoff) | (dup_ecaviar_results$X.log_gwas_pval < gwas_cutoff),]$adjusted
-		clpp = dup_ecaviar_results$clpp
-		clpp_mod = dup_ecaviar_results$clpp_mod
-		problems = gsub("gwas_sumstats", "", dup_ecaviar_results$base_gwas_file)
+		dup_finemap_results = finemap_results
+		dup_finemap_results$adjusted = pmin(0.0000001 * dup_finemap_results$X.log_eqtl_pval, 0.0000001 * dup_finemap_results$X.log_gwas_pval)
+		dup_finemap_results[(dup_finemap_results$X.log_eqtl_pval < eqtl_cutoff) | (dup_finemap_results$X.log_gwas_pval < gwas_cutoff),]$clpp = dup_finemap_results[(dup_finemap_results$X.log_eqtl_pval < eqtl_cutoff) | (dup_finemap_results$X.log_gwas_pval < gwas_cutoff),]$adjusted
+		clpp = dup_finemap_results$clpp
+		clpp_mod = dup_finemap_results$clpp_mod
+		problems = gsub("gwas_sumstats", "", dup_finemap_results$base_gwas_file)
 		problems = as.numeric(gsub("_txt_gz", "", problems))
 		answer_key = get_answer_key(answer_file)
 		answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
@@ -89,15 +161,15 @@ main = function()
 
 	# eCAVIAR/FINEMAP (should actually run both of them, because why not)
 	# Get CLPP scores and actual answers for each test
-	problems = gsub("gwas_sumstats", "", ecaviar_results$base_gwas_file)
+	problems = gsub("gwas_sumstats", "", finemap_results$base_gwas_file)
 	problems = as.numeric(gsub("_txt_gz", "", problems))
 	easy_lineup = match(problems, easy_answer_key$test_case)
 	easy_sub_problems = problems[!is.na(easy_lineup)]
-	easy_clpp = ecaviar_results[which(problems %in% easy_sub_problems),]$clpp
+	easy_clpp = finemap_results[which(problems %in% easy_sub_problems),]$clpp
 	easy_answers = easy_answer_key$is_coloc[easy_lineup[!is.na(easy_lineup)]]
 	easiest_lineup = match(problems, easiest_answer_key$test_case)
 	easiest_sub_problems = problems[!is.na(easiest_lineup)]
-	easiest_clpp = ecaviar_results[which(problems %in% easiest_sub_problems),]$clpp
+	easiest_clpp = finemap_results[which(problems %in% easiest_sub_problems),]$clpp
 	easiest_answers = easiest_answer_key$is_coloc[easiest_lineup[!is.na(easiest_lineup)]]
 	
 	# Make eCAVIAR ROC
@@ -174,7 +246,7 @@ get_answer_key = function(answer_file)
 	return(answer_key)
 }
 
-get_ecaviar_results = function(base_dir)
+get_finemap_results = function(base_dir)
 {
 	results_dirs = dir(base_dir)
 	data = list()
@@ -204,6 +276,23 @@ get_coloc_results = function(base_dir)
 	return(all_results)
 }
 
+get_rtc_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("rtc_score_status", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+}
+
+
+
 main()
 
 # TODO now:
@@ -211,6 +300,6 @@ main()
 # - Stratify by GWAS/eQTL effect sizes and sample sizes
 # - Vary the percentage of all input sites that are controls vs. cases -- in a real application there will be many more controls than cases
 # - Penalize sites where the eQTL/GWAS p-value aren't high enough (set them to 0 or lower or something)
-# - Try it with other methods (coloc and RTC)
+# - Try it with other methods (beyond coloc and RTC)
 # - Compare each method when at its best
 
