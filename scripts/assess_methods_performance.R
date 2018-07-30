@@ -93,9 +93,13 @@ main = function()
 	rtc_results = get_rtc_results(rtc_base_dir)
 	rtc_problems = gsub("eqtl_sumstats", "", rtc_results$eqtl_file)
 	rtc_problems = as.numeric(gsub("_txt_gz", "", rtc_problems))
+	bf_results = get_caviarbf_results(caviarbf_base_dir)
+	bf_problems = gsub("eqtl_sumstats", "", bf_results$eqtl_file)
+	bf_problems = as.numeric(gsub("_txt_gz", "", bf_problems))
 
 	problems = rtc_problems[rtc_problems %in% finemap_problems]
 	problems = problems[problems %in% coloc_problems]
+	problems = problems[problems %in% bf_problems]
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 
 	# For now we're basically just ranking the results of each method and combining 
@@ -110,12 +114,22 @@ main = function()
 	clpp = scale(clpp)
 	clpp_mod = finemap_results$clpp_mod[match(problems, finemap_problems)]
 	clpp_mod = scale(clpp_mod)
+	bf_clpp = bf_results$clpp[match(problems, bf_problems)]
+	bf_clpp = scale(bf_clpp)
 
-	ensemble = h4pp + rtc + clpp + clpp_mod
+	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp
 	ensemble = ensemble / max(ensemble)
 	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.12 )
 	# Naive ensemble performance is comparable with the best methods
 	
+	# Note of course that any site causing one or more methods to fail completely
+	# will not currently appear in this table.
+	results_table = data.frame(list(coloc_h4pp=h4pp, rtc=rtc, finemap_clpp=clpp, finemap_clpp_mod=clpp_mod, caviar_bf_clpp=bf_clpp))
+	# These two plots are illuminating. Goal will be to pick out some of the off-diagonal elements and to figure out
+	# why they're scoring differently in the different methods. Particularly for the very different methods.
+	pairs(results_table, lower.panel=NULL)
+	pairs(apply(results_table, 2, rank), lower.panel=NULL)
+
 	#
 	# Part 2: Modify parameters
 	#
