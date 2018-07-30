@@ -13,6 +13,7 @@ main = function()
 {
 	timestamp = "2018-07-27_15-23-15"
 	finemap_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/finemap-comparisons/", timestamp)
+	caviarbf_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/caviarbf-comparisons/", timestamp)
 	coloc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/coloc-comparisons/", timestamp)
 	rtc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/rtc-comparisons/", timestamp)
 	answer_file = paste0("/users/mgloud/projects/coloc_comparisons/output/simulations/", timestamp, "/answer_key.txt")
@@ -36,10 +37,8 @@ main = function()
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 	
 	# Make FINEMAP ROC
-	roc(answers, clpp, plot=TRUE)
-	roc(answers, clpp_mod, plot=TRUE)
-	plot(roc(answers, clpp), print.auc = TRUE, col = "black", add = TRUE)
-	plot(roc(answers, clpp_mod), print.auc = TRUE, col = "red", add = TRUE)
+	plot(roc(answers, clpp), print.auc = TRUE, col = "black", print.auc.x = 0.2, print.auc.y = 0.2)
+	plot(roc(answers, clpp_mod), print.auc = TRUE, col = "red", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.24)
 
 	#
 	# COLOC
@@ -51,7 +50,7 @@ main = function()
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 
 	# Make COLOC ROC
-	plot(roc(answers, h4pp), print.auc = TRUE, col = "blue", add=TRUE)
+	plot(roc(answers, h4pp), print.auc = TRUE, col = "blue", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.28)
 
 	#
 	# RTC
@@ -63,8 +62,19 @@ main = function()
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 	
 	# Make RTC ROC
-	plot(roc(answers, rtc), print.auc = TRUE, col = "green", add = TRUE)
+	plot(roc(answers, rtc), print.auc = TRUE, col = "green", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.32)
 
+	#
+	# CAVIARBF
+	#
+	caviarbf_results = get_caviarbf_results(caviarbf_base_dir) 
+	clpp = caviarbf_results$clpp
+	problems = gsub("eqtl_sumstats", "", caviarbf_results$eqtl_file)
+	problems = as.numeric(gsub("_txt_gz", "", problems))
+	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
+
+	# Make RTC ROC
+	plot(roc(answers, clpp), print.auc = TRUE, col = "gray", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.16)
 
 	# 
 	# Part 1.5: Try an ensemble method
@@ -103,8 +113,7 @@ main = function()
 
 	ensemble = h4pp + rtc + clpp + clpp_mod
 	ensemble = ensemble / max(ensemble)
-	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE)
-	
+	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.12 )
 	# Naive ensemble performance is comparable with the best methods
 	
 	#
@@ -290,6 +299,22 @@ get_rtc_results = function(base_dir)
 	all_results = do.call(rbind, data)
 	return(all_results)
 }
+
+get_caviarbf_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("clpp_status", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+}
+
 
 
 
