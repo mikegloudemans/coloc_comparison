@@ -11,14 +11,19 @@ require(pROC)
 
 main = function()
 {
+	answer_file = paste0("/users/mgloud/projects/coloc_comparisons/output/simulations/", timestamp, "/answer_key.txt")
+	answer_key = get_answer_key(answer_file)
+	compare_methods(answer_key, timestamp)
+}
+
+compare_methods = function(answer_key, timestamp)
+{
 	timestamp = "2018-07-27_15-23-15"
 	finemap_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/finemap-comparisons/", timestamp)
 	caviarbf_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/caviarbf-comparisons/", timestamp)
 	coloc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/coloc-comparisons/", timestamp)
 	rtc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/rtc-comparisons/", timestamp)
-	answer_file = paste0("/users/mgloud/projects/coloc_comparisons/output/simulations/", timestamp, "/answer_key.txt")
-
-	answer_key = get_answer_key(answer_file)
+	twas_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/twas-comparisons/", timestamp)
 
 	#
 	# Part 1: Evaluate individual methods on full data set
@@ -37,8 +42,8 @@ main = function()
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 	
 	# Make FINEMAP ROC
-	plot(roc(answers, clpp), print.auc = TRUE, col = "black", print.auc.x = 0.2, print.auc.y = 0.2)
-	plot(roc(answers, clpp_mod), print.auc = TRUE, col = "red", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.24)
+	plot(roc(answers, clpp), print.auc = TRUE, col = "black", print.auc.x = 0.2, print.auc.y = 0.32, main = "Colocalization detection performance")
+	plot(roc(answers, clpp_mod), print.auc = TRUE, col = "red", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.28)
 
 	#
 	# COLOC
@@ -50,7 +55,7 @@ main = function()
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 
 	# Make COLOC ROC
-	plot(roc(answers, h4pp), print.auc = TRUE, col = "blue", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.28)
+	plot(roc(answers, h4pp), print.auc = TRUE, col = "blue", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.24)
 
 	#
 	# RTC
@@ -62,7 +67,7 @@ main = function()
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 	
 	# Make RTC ROC
-	plot(roc(answers, rtc), print.auc = TRUE, col = "green", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.32)
+	plot(roc(answers, rtc), print.auc = TRUE, col = "green", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.20)
 
 	#
 	# CAVIARBF
@@ -73,8 +78,21 @@ main = function()
 	problems = as.numeric(gsub("_txt_gz", "", problems))
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 
-	# Make RTC ROC
+	# Make CAVIARBF ROC
 	plot(roc(answers, clpp), print.auc = TRUE, col = "gray", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.16)
+
+	#
+	# TWAS
+	#
+	twas_results = get_twas_results(twas_base_dir) 
+	twas_p = twas_results$twas_log_pval
+	problems = gsub("eqtl_sumstats", "", twas_results$eqtl_file)
+	problems = as.numeric(gsub("_txt_gz", "", problems))
+	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
+
+	# Make RTC ROC
+	plot(roc(answers, twas_p), print.auc = TRUE, col = "orange", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.12)
+
 
 	# 
 	# Part 1.5: Try an ensemble method
@@ -96,10 +114,14 @@ main = function()
 	bf_results = get_caviarbf_results(caviarbf_base_dir)
 	bf_problems = gsub("eqtl_sumstats", "", bf_results$eqtl_file)
 	bf_problems = as.numeric(gsub("_txt_gz", "", bf_problems))
+	twas_results = get_twas_results(twas_base_dir)
+	twas_problems = gsub("eqtl_sumstats", "", twas_results$eqtl_file)
+	twas_problems = as.numeric(gsub("_txt_gz", "", twas_problems))
 
 	problems = rtc_problems[rtc_problems %in% finemap_problems]
 	problems = problems[problems %in% coloc_problems]
 	problems = problems[problems %in% bf_problems]
+	problems = problems[problems %in% twas_problems]
 	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 
 	# For now we're basically just ranking the results of each method and combining 
@@ -116,28 +138,33 @@ main = function()
 	clpp_mod = scale(clpp_mod)
 	bf_clpp = bf_results$clpp[match(problems, bf_problems)]
 	bf_clpp = scale(bf_clpp)
+	twas_p = twas_results$twas_log_pval[match(problems, twas_problems)]
+	twas_p = scale(twas_p)
 
-	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp
+	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + twas_p
 	ensemble = ensemble / max(ensemble)
-	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.12 )
+	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.08 )
+	legend(0.9, 0.3, legend=c("FINEMAP-CLPP", "FINEMAP-CLPP_mod", "COLOC", "RTC", "CAVIARBF", "TWAS", "ensemble"),
+	              col=c("black", "red", "blue", "green", "gray", "orange", "purple"), bg="white", lty=1, cex=0.8, lwd=4)
 	# Naive ensemble performance is comparable with the best methods
 
 	readline("Press enter:")
 	
 	# Note of course that any site causing one or more methods to fail completely
 	# will not currently appear in this table.
-	results_table = data.frame(list(coloc_h4pp=h4pp, rtc=rtc, finemap_clpp=clpp, finemap_clpp_mod=clpp_mod, caviar_bf_clpp=bf_clpp))
+	results_table = data.frame(list(coloc_h4pp=h4pp, rtc=rtc, finemap_clpp=clpp, finemap_clpp_mod=clpp_mod, caviar_bf_clpp=bf_clpp, twas_logp=twas_p))
 	# These two plots are illuminating. Goal will be to pick out some of the off-diagonal elements and to figure out
 	# why they're scoring differently in the different methods. Particularly for the very different methods.
 	pairs(results_table, lower.panel=NULL)
-	pairs(apply(results_table, 2, rank), lower.panel=NULL)
-
-	#
-	# Part 2: Modify parameters
-	#
-
-	stopifnot(FALSE)
+	readline("Press enter:")
+	cols = c("black","red")[as.numeric(answers) + 1]
+	pairs(apply(results_table, 2, rank), lower.panel=NULL, col=cols, pch=19)
+	readline("Press enter:")
 	
+	#
+	# Part 2: Modify parameters of the methods themselves
+	#
+
 	# Now let's try it with a few other adjustments (will look better once
 	# we have more sites though...)
 
@@ -149,14 +176,28 @@ main = function()
 	# - TODO: Is this effect sensitive to the simulation parameters for generating test cases?
 	# - TODO: What about if we apply the same cutoffs with other methods? Coloc, RTC, SMR...?
 
+	require(grDevices)
+
+	dup_finemap_results = finemap_results
+	clpp = dup_finemap_results$clpp
+	clpp_mod = dup_finemap_results$clpp_mod
+	problems = gsub("gwas_sumstats", "", dup_finemap_results$base_gwas_file)
+	problems = as.numeric(gsub("_txt_gz", "", problems))
+	answer_key = get_answer_key(answer_file)
+	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 	for (cutoff in 0:5)
 	{
+		print(cutoff)
+		clpp_color = adjustcolor("red", alpha.f = 0.7^cutoff)
+		clpp_mod_color = adjustcolor("blue", alpha.f = 0.7^cutoff)
+
 		gwas_cutoff = cutoff
 		eqtl_cutoff = cutoff
 
 		dup_finemap_results = finemap_results
 		dup_finemap_results$adjusted = pmin(0.0000001 * dup_finemap_results$X.log_eqtl_pval, 0.0000001 * dup_finemap_results$X.log_gwas_pval)
 		dup_finemap_results[(dup_finemap_results$X.log_eqtl_pval < eqtl_cutoff) | (dup_finemap_results$X.log_gwas_pval < gwas_cutoff),]$clpp = dup_finemap_results[(dup_finemap_results$X.log_eqtl_pval < eqtl_cutoff) | (dup_finemap_results$X.log_gwas_pval < gwas_cutoff),]$adjusted
+		dup_finemap_results[(dup_finemap_results$X.log_eqtl_pval < eqtl_cutoff) | (dup_finemap_results$X.log_gwas_pval < gwas_cutoff),]$clpp_mod = dup_finemap_results[(dup_finemap_results$X.log_eqtl_pval < eqtl_cutoff) | (dup_finemap_results$X.log_gwas_pval < gwas_cutoff),]$adjusted
 		clpp = dup_finemap_results$clpp
 		clpp_mod = dup_finemap_results$clpp_mod
 		problems = gsub("gwas_sumstats", "", dup_finemap_results$base_gwas_file)
@@ -165,11 +206,16 @@ main = function()
 		answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
 		
 		# Make eCAVIAR ROC
-		roc(answers, clpp, plot=TRUE, main=paste("CLPP with min GWAS/eQTL p-value", cutoff))
-		readline("Press enter:")
-		#roc(answers, clpp_mod, plot=TRUE, main=paste("CLPP_mod with min GWAS/eQTL p-value", cutoff))
-		#readline("Press enter:")
+		plot(roc(answers, clpp), add=cutoff!=0, col=clpp_color, print.auc=TRUE, print.auc.x = 0.2, print.auc.y = 0.60 - 0.04*cutoff)
+		plot(roc(answers, clpp_mod), add=TRUE, col=clpp_mod_color, print.auc=TRUE, print.auc.x = 0.2, print.auc.y = 0.36 - 0.04*cutoff)	
 	}
+	readline("Press enter:")
+	# Possibly add legend to the above? This coloring isn't good though because the alphas
+	# change color when they overlap
+
+	#
+	# Part 3: Modify parameters of the simulation
+	#
 
 
 	# What if we change the ratio of cases to controls?
@@ -183,7 +229,6 @@ main = function()
 	easiest_nocoloc_key = nocoloc_key[sample(1:dim(nocoloc_key)[1], floor(dim(nocoloc_key)[1] / 4)),]
 	easiest_answer_key = rbind(coloc_key, easiest_nocoloc_key)
 
-
 	# eCAVIAR/FINEMAP (should actually run both of them, because why not)
 	# Get CLPP scores and actual answers for each test
 	problems = gsub("gwas_sumstats", "", finemap_results$base_gwas_file)
@@ -196,6 +241,8 @@ main = function()
 	easiest_sub_problems = problems[!is.na(easiest_lineup)]
 	easiest_clpp = finemap_results[which(problems %in% easiest_sub_problems),]$clpp
 	easiest_answers = easiest_answer_key$is_coloc[easiest_lineup[!is.na(easiest_lineup)]]
+	sum(easy_answers) / length(easy_answers)
+	sum(easiest_answers) / length(easiest_answers)
 	
 	# Make eCAVIAR ROC
 	roc(easy_answers, easy_clpp, plot=TRUE)
@@ -330,6 +377,22 @@ get_caviarbf_results = function(base_dir)
 	all_results = do.call(rbind, data)
 	return(all_results)
 }
+
+get_twas_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("twas_clpp_status", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+}
+
 
 
 
