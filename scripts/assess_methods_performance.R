@@ -121,6 +121,8 @@ main = function()
 	ensemble = ensemble / max(ensemble)
 	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.12 )
 	# Naive ensemble performance is comparable with the best methods
+
+	readline("Press enter:")
 	
 	# Note of course that any site causing one or more methods to fail completely
 	# will not currently appear in this table.
