@@ -90,7 +90,7 @@ for i in range(num_tests):
         w.write(config_template.format(i, base_dir, base_last_dir, n_gwas, cc_ratio_gwas, n_eqtl))
 
     # Get it going
-    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/coloc.config", shell=True)
+    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/coloc.config 8", shell=True)
 
 # (Later: Separate script)
 

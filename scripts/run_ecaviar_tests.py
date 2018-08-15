@@ -83,5 +83,5 @@ for i in range(num_tests):
         w.write(config_template.format(i, base_dir, base_last_dir))
 
     # Get it going
-    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/ecaviar.config", shell=True)
+    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/ecaviar.config 8", shell=True)
 

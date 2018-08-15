@@ -7,101 +7,77 @@
 #   I need to fix it so that we always anchor on the central (original GWAS) SNP.
 #   This seed SNP is now being recorded at the time of the simulations
 
+# TODO: We also need to make sure the set being compared by the different methods is the same
+# (should really just use the results being compared with the Ensembl method). Because if a 
+# site is missing it's not obvious what info that contains right now...and I suspect that
+# it's actually making it easier on something like COLOC if this site is just thrown away
+# since it's likely to be a negative
+
 require(pROC)
+require(PRROC)
 
 main = function()
 {
+	timestamp = "2018-07-27_15-23-15"
 	answer_file = paste0("/users/mgloud/projects/coloc_comparisons/output/simulations/", timestamp, "/answer_key.txt")
+
 	answer_key = get_answer_key(answer_file)
+
+	# Run with full answer key
 	compare_methods(answer_key, timestamp)
+
+	# What if we only allow our "test" colocalizations to be those with GWAS
+	# effect size over a certain threshold?	
+	other_answer_key = filter_answer_key_by_gwas_effect(answer_key, 0.05)
+	compare_methods(other_answer_key, timestamp)
+
+	# Those with eQTL effect size over a certain threshold?
+	other_answer_key = filter_answer_key_by_eqtl_effect(answer_key, 0.1)
+	compare_methods(other_answer_key, timestamp)
+
+	# TODO: What if MAX GWAS threshold is regulated? After all, we don't often see so
+	# many great-looking sites, more often we have mostly junk
+
+	# Those with GWAS/eQTL sample size over a certain threshold?
+	other_answer_key = filter_answer_key_by_min_gwas_case_n(answer_key, 500)
+	other_answer_key = filter_answer_key_by_min_gwas_control_n(other_answer_key, 500)
+	other_answer_key = filter_answer_key_by_min_eqtl_n(other_answer_key, 100)
+	compare_methods(other_answer_key, timestamp)
+
+	# Those with GWAS/eQTL sample size UNDER a certain threshold
+	# (special case for underpowered GWAS or eQTL studies)
+	other_answer_key = filter_answer_key_by_max_eqtl_n(answer_key, 100)
+	compare_methods(other_answer_key, timestamp)
+
+	# What about if we change the ratio of positive to negative sites?
+	other_answer_key = trim_answer_key(answer_key, 0.5)
+	compare_methods(other_answer_key, timestamp)
+
+	other_answer_key = trim_answer_key(answer_key, 0.25)
+	compare_methods(other_answer_key, timestamp)
+
+	other_answer_key = trim_answer_key(answer_key, 3)
+	compare_methods(other_answer_key, timestamp)
+	
 }
 
 compare_methods = function(answer_key, timestamp)
 {
-	timestamp = "2018-07-27_15-23-15"
 	finemap_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/finemap-comparisons/", timestamp)
 	caviarbf_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/caviarbf-comparisons/", timestamp)
 	coloc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/coloc-comparisons/", timestamp)
 	rtc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/rtc-comparisons/", timestamp)
 	twas_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/twas-comparisons/", timestamp)
 
-	#
-	# Part 1: Evaluate individual methods on full data set
-	#
-
-	#
-	# FINEMAP
-	#
-
-	# Get CLPP scores and actual answers for each test
-	finemap_results = get_finemap_results(finemap_base_dir) 
-	clpp = finemap_results$clpp
-	clpp_mod = finemap_results$clpp_mod
-	problems = gsub("gwas_sumstats", "", finemap_results$base_gwas_file)
-	problems = as.numeric(gsub("_txt_gz", "", problems))
-	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
-	
-	# Make FINEMAP ROC
-	plot(roc(answers, clpp), print.auc = TRUE, col = "black", print.auc.x = 0.2, print.auc.y = 0.32, main = "Colocalization detection performance")
-	plot(roc(answers, clpp_mod), print.auc = TRUE, col = "red", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.28)
-
-	#
-	# COLOC
-	#
-	coloc_results = get_coloc_results(coloc_base_dir)
-	h4pp = coloc_results$clpp_h4
-	problems = gsub("eqtl_sumstats", "", coloc_results$eqtl_file)
-	problems = as.numeric(gsub("_txt_gz", "", problems))
-	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
-
-	# Make COLOC ROC
-	plot(roc(answers, h4pp), print.auc = TRUE, col = "blue", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.24)
-
-	#
-	# RTC
-	#
-	rtc_results = get_rtc_results(rtc_base_dir)
-	rtc = rtc_results$rtc_score
-	problems = gsub("eqtl_sumstats", "", rtc_results$eqtl_file)
-	problems = as.numeric(gsub("_txt_gz", "", problems))
-	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
-	
-	# Make RTC ROC
-	plot(roc(answers, rtc), print.auc = TRUE, col = "green", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.20)
-
-	#
-	# CAVIARBF
-	#
-	caviarbf_results = get_caviarbf_results(caviarbf_base_dir) 
-	clpp = caviarbf_results$clpp
-	problems = gsub("eqtl_sumstats", "", caviarbf_results$eqtl_file)
-	problems = as.numeric(gsub("_txt_gz", "", problems))
-	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
-
-	# Make CAVIARBF ROC
-	plot(roc(answers, clpp), print.auc = TRUE, col = "gray", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.16)
-
-	#
-	# TWAS
-	#
-	twas_results = get_twas_results(twas_base_dir) 
-	twas_p = twas_results$twas_log_pval
-	problems = gsub("eqtl_sumstats", "", twas_results$eqtl_file)
-	problems = as.numeric(gsub("_txt_gz", "", problems))
-	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
-
-	# Make RTC ROC
-	plot(roc(answers, twas_p), print.auc = TRUE, col = "orange", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.12)
-
-
 	# 
-	# Part 1.5: Try an ensemble method
+	# Part 1: Compare methods' performance on simulated data
 	#
+	answer_indices = answer_key$test_case
 
-	# Get the test sites for which all methods were tried.	
-	# NOTE: Technically I should only be comparing on these anyway,
-	# unless I can explain why certain sites weren't tested with certain algorithms.
-	# Fix that later
+	# Get the test sites for which all methods were tried.
+	# TODO: Figure out why some sites aren't being tested -- technically this
+	# should be a penalty to THAT method; doesn't necessarily mean that every
+	# method should throw away that site
 	finemap_results = get_finemap_results(finemap_base_dir) 
 	finemap_problems = gsub("gwas_sumstats", "", finemap_results$base_gwas_file)
 	finemap_problems = as.numeric(gsub("_txt_gz", "", finemap_problems))
@@ -122,24 +98,29 @@ compare_methods = function(answer_key, timestamp)
 	problems = problems[problems %in% coloc_problems]
 	problems = problems[problems %in% bf_problems]
 	problems = problems[problems %in% twas_problems]
-	answers = answer_key$is_coloc[match(problems, answer_key$test_case)]
+	problems = problems[problems %in% answer_key$test_case]
 
-	# For now we're basically just ranking the results of each method and combining 
-	# the ranks
-	# In the future though, there are ways we can get more nuance than that
-	# if one method is very confident
-	h4pp = coloc_results$clpp_h4[match(problems, coloc_problems)]
-	h4pp = scale(h4pp)
-	rtc = rtc_results$rtc_score[match(problems, rtc_problems)]
-	rtc = scale(rtc)
-	clpp = finemap_results$clpp[match(problems, finemap_problems)]
-	clpp = scale(clpp)
-	clpp_mod = finemap_results$clpp_mod[match(problems, finemap_problems)]
-	clpp_mod = scale(clpp_mod)
-	bf_clpp = bf_results$clpp[match(problems, bf_problems)]
-	bf_clpp = scale(bf_clpp)
-	twas_p = twas_results$twas_log_pval[match(problems, twas_problems)]
-	twas_p = scale(twas_p)
+	selection = match(answer_indices, problems)
+	matched_answers = answer_key[which(!is.na(selection)),]
+	answers = matched_answers$is_coloc
+	selection = selection[!is.na(selection)]
+	problem_set = problems[selection]
+
+	h4pp = scale(coloc_results$clpp_h4[match(problem_set, coloc_problems)])
+	rtc = scale(rtc_results$rtc[match(problem_set, rtc_problems)])
+	clpp = scale(finemap_results$clpp[match(problem_set, finemap_problems)])
+	clpp_mod = scale(finemap_results$clpp_mod[match(problem_set, finemap_problems)])
+	bf_clpp = scale(bf_results$clpp[match(problem_set, bf_problems)])
+	twas_p = scale(twas_results$twas_log_pval[match(problem_set, twas_problems)])
+
+	plot(roc(answers, as.numeric(clpp)), print.auc = TRUE, col = "black", print.auc.x = 0.2, print.auc.y = 0.32, main = "Colocalization detection performance")
+	plot(roc(answers, as.numeric(clpp_mod)), print.auc = TRUE, col = "red", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.28)
+	plot(roc(answers, as.numeric(h4pp)), print.auc = TRUE, col = "blue", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.24)
+	plot(roc(answers, as.numeric(rtc)), print.auc = TRUE, col = "green", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.20)
+	plot(roc(answers, as.numeric(bf_clpp)), print.auc = TRUE, col = "gray", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.16)
+	plot(roc(answers, as.numeric(twas_p)), print.auc = TRUE, col = "orange", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.12)
+
+
 
 	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + twas_p
 	ensemble = ensemble / max(ensemble)
@@ -149,7 +130,19 @@ compare_methods = function(answer_key, timestamp)
 	# Naive ensemble performance is comparable with the best methods
 
 	readline("Press enter:")
-	
+
+	# Something about this doesn't seem quite right	
+	plot(pr.curve(clpp[which(answers==1)], clpp[which(answers==0)], curve=TRUE), color="black")
+	plot(pr.curve(clpp_mod[which(answers==1)], clpp_mod[which(answers==0)], curve=TRUE), add=TRUE, color="red")
+	plot(pr.curve(h4pp[which(answers==1)], h4pp[which(answers==0)], curve=TRUE), add=TRUE, color="blue")
+	plot(pr.curve(rtc[which(answers==1)], rtc[which(answers==0)], curve=TRUE), add=TRUE, color="green")
+	plot(pr.curve(bf_clpp[which(answers==1)], bf_clpp[which(answers==0)], curve=TRUE), add=TRUE, color="gray")
+	plot(pr.curve(twas_p[which(answers==1)], twas_p[which(answers==0)], curve=TRUE), add=TRUE, color="orange")
+	plot(pr.curve(ensemble[which(answers==1)], ensemble[which(answers==0)], curve=TRUE), add=TRUE, color="purple")
+
+	readline("Press enter:")
+
+
 	# Note of course that any site causing one or more methods to fail completely
 	# will not currently appear in this table.
 	results_table = data.frame(list(coloc_h4pp=h4pp, rtc=rtc, finemap_clpp=clpp, finemap_clpp_mod=clpp_mod, caviar_bf_clpp=bf_clpp, twas_logp=twas_p))
@@ -161,6 +154,7 @@ compare_methods = function(answer_key, timestamp)
 	pairs(apply(results_table, 2, rank), lower.panel=NULL, col=cols, pch=19)
 	readline("Press enter:")
 	
+	return(FALSE)
 	#
 	# Part 2: Modify parameters of the methods themselves
 	#
@@ -175,6 +169,8 @@ compare_methods = function(answer_key, timestamp)
 	# - TODO: Plot: what happens to CLPP_mod score?
 	# - TODO: Is this effect sensitive to the simulation parameters for generating test cases?
 	# - TODO: What about if we apply the same cutoffs with other methods? Coloc, RTC, SMR...?
+
+	# NOTE: This part needs to be fixed to deal with the adaptively sized answer key
 
 	require(grDevices)
 
@@ -212,7 +208,226 @@ compare_methods = function(answer_key, timestamp)
 	readline("Press enter:")
 	# Possibly add legend to the above? This coloring isn't good though because the alphas
 	# change color when they overlap
+}
 
+# Right now some could be sampled twice, which is admittedly not ideal
+# We set the ease factor by including all regular coloc sites as normal
+# but by resampling the desired number of negative examples to get the
+# proportion correct
+trim_answer_key = function(answer_key, factor)
+{
+	set.seed(0)
+	coloc_key = answer_key[answer_key$is_coloc,]
+	nocoloc_key = answer_key[!answer_key$is_coloc,]
+	easy_nocoloc_key = nocoloc_key[sample(1:dim(nocoloc_key)[1], floor(dim(nocoloc_key)[1] * factor), replace=TRUE),]
+	easy_answer_key = rbind(coloc_key, easy_nocoloc_key)
+	return(easy_answer_key)
+}
+
+get_answer_key = function(answer_file)
+{
+	answer_key = read.table(answer_file, header=TRUE, sep="\t")
+	is_coloc = function(x)
+	{
+		vars = strsplit(x, ",")
+		eqtls = c()
+		gwas = c()
+		for (v in vars[[1]])
+		{
+			info = strsplit(v, ":")
+			if (info[[1]][1] == "gwas")
+			{
+				gwas = c(gwas, info[[1]][2])
+			} else if (info[[1]][1] == "eqtl")
+			{
+				eqtls = c(eqtls, info[[1]][2])
+			}
+		}
+		overlap = match(eqtls, gwas)
+		overlap = overlap[!is.na(overlap)]
+		return(length(overlap) > 0)
+	}
+
+	answer_key$is_coloc = sapply(as.character(answer_key$causal_variants), is_coloc)
+
+	return(answer_key)
+}
+
+filter_answer_key_by_min_gwas_case_n = function(answer_key, N)
+{
+	new_answer_key = answer_key[answer_key$cases_n >= N,]
+	return(new_answer_key)
+}
+
+filter_answer_key_by_min_gwas_control_n = function(answer_key, N)
+{
+	new_answer_key = answer_key[answer_key$controls_n >= N,]
+	return(new_answer_key)
+}
+
+filter_answer_key_by_min_eqtl_n = function(answer_key, N)
+{
+	new_answer_key = answer_key[answer_key$eqtl_n >= N,]
+	return(new_answer_key)
+}
+
+filter_answer_key_by_max_gwas_case_n = function(answer_key, N)
+{
+	new_answer_key = answer_key[answer_key$cases_n <= N,]
+	return(new_answer_key)
+}
+
+filter_answer_key_by_max_gwas_control_n = function(answer_key, N)
+{
+	new_answer_key = answer_key[answer_key$controls_n <= N,]
+	return(new_answer_key)
+}
+
+filter_answer_key_by_max_eqtl_n = function(answer_key, N)
+{
+	new_answer_key = answer_key[answer_key$eqtl_n <= N,]
+	return(new_answer_key)
+}
+
+filter_answer_key_by_max_cc_ratio = function(answer_key, r)
+{
+	new_answer_key = answer_key[answer_key$cases_n / (answer_key$controls_n + answer_key$cases_n) <= r,]
+	return(new_answer_key)
+}
+
+filter_answer_key_by_min_cc_ratio = function(answer_key, r)
+{
+	new_answer_key = answer_key[answer_key$cases_n / (answer_key$controls_n + answer_key$cases_n) >= r,]
+	return(new_answer_key)
+}
+
+
+# Any so-called colocalization that has GWAS effect size below a 
+# certain level will be removed
+filter_answer_key_by_gwas_effect = function(answer_key, level)
+{
+	exceeds_level = function(x)
+	{
+		vars = strsplit(x, ",")
+		eqtls = c()
+		gwas = c()
+		for (v in vars[[1]])
+		{
+			info = strsplit(v, ":")
+			if (info[[1]][1] == "gwas")
+			{
+				return(abs(as.numeric(info[[1]][3])) > level)
+			}
+		}
+		return(FALSE)
+	}
+	new_answer_key = answer_key[sapply(as.character(answer_key$causal_variants), exceeds_level) | !answer_key$is_coloc,]
+	return(new_answer_key)
+}
+
+# Any so-called colocalization that has GWAS effect size below a 
+# certain level will be removed
+filter_answer_key_by_eqtl_effect = function(answer_key, level)
+{
+	exceeds_level = function(x)
+	{
+		vars = strsplit(x, ",")
+		eqtls = c()
+		gwas = c()
+		for (v in vars[[1]])
+		{
+			info = strsplit(v, ":")
+			if (info[[1]][1] == "eqtl")
+			{
+				return(abs(as.numeric(info[[1]][3])) > level)
+			}
+		}
+		return(FALSE)
+	}
+	new_answer_key = answer_key[sapply(as.character(answer_key$causal_variants), exceeds_level) | !answer_key$is_coloc,]
+	return(new_answer_key)
+}
+
+
+get_finemap_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("clpp_status", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+
+}
+
+get_coloc_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("h4pp_status", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+}
+
+get_rtc_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("rtc_score_status", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+}
+
+get_caviarbf_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("clpp_status", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+}
+
+get_twas_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("twas_clpp_status", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+}
+
+# This function is never called and is currently used for nothing
+nothing = function()
+{
 	#
 	# Part 3: Modify parameters of the simulation
 	#
@@ -283,127 +498,16 @@ compare_methods = function(answer_key, timestamp)
 
 	# What if we try some ensemble, or even just a weighted classifier, of the different methods?
 
-	
-
-
-
 }
-
-get_answer_key = function(answer_file)
-{
-	answer_key = read.table(answer_file, header=TRUE, sep="\t")
-	is_coloc = function(x)
-	{
-		vars = strsplit(x, ",")
-		eqtls = c()
-		gwas = c()
-		for (v in vars[[1]])
-		{
-			info = strsplit(v, ":")
-			if (info[[1]][1] == "gwas")
-			{
-				gwas = c(gwas, info[[1]][2])
-			} else if (info[[1]][1] == "eqtl")
-			{
-				eqtls = c(eqtls, info[[1]][2])
-			}
-		}
-		overlap = match(eqtls, gwas)
-		overlap = overlap[!is.na(overlap)]
-		return(length(overlap) > 0)
-	}
-
-	answer_key$is_coloc = sapply(as.character(answer_key$causal_variants), is_coloc)
-
-	return(answer_key)
-}
-
-get_finemap_results = function(base_dir)
-{
-	results_dirs = dir(base_dir)
-	data = list()
-	for (rd in results_dirs)
-	{
-		subdir = dir(paste(base_dir, rd, sep="/"))
-		results_file = subdir[grepl("clpp_status", subdir)]
-		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
-	}
-
-	all_results = do.call(rbind, data)
-	return(all_results)
-}
-
-get_coloc_results = function(base_dir)
-{
-	results_dirs = dir(base_dir)
-	data = list()
-	for (rd in results_dirs)
-	{
-		subdir = dir(paste(base_dir, rd, sep="/"))
-		results_file = subdir[grepl("h4pp_status", subdir)]
-		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
-	}
-
-	all_results = do.call(rbind, data)
-	return(all_results)
-}
-
-get_rtc_results = function(base_dir)
-{
-	results_dirs = dir(base_dir)
-	data = list()
-	for (rd in results_dirs)
-	{
-		subdir = dir(paste(base_dir, rd, sep="/"))
-		results_file = subdir[grepl("rtc_score_status", subdir)]
-		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
-	}
-
-	all_results = do.call(rbind, data)
-	return(all_results)
-}
-
-get_caviarbf_results = function(base_dir)
-{
-	results_dirs = dir(base_dir)
-	data = list()
-	for (rd in results_dirs)
-	{
-		subdir = dir(paste(base_dir, rd, sep="/"))
-		results_file = subdir[grepl("clpp_status", subdir)]
-		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
-	}
-
-	all_results = do.call(rbind, data)
-	return(all_results)
-}
-
-get_twas_results = function(base_dir)
-{
-	results_dirs = dir(base_dir)
-	data = list()
-	for (rd in results_dirs)
-	{
-		subdir = dir(paste(base_dir, rd, sep="/"))
-		results_file = subdir[grepl("twas_clpp_status", subdir)]
-		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
-	}
-
-	all_results = do.call(rbind, data)
-	return(all_results)
-}
-
-
-
-
 
 main()
 
 # TODO now:
+# - Implement baseline method: max (-log eQTL + -log GWAS pval) across all SNPs at the site...
 # - Replot with more test cases
-# - Stratify by GWAS/eQTL effect sizes and sample sizes
-# - Vary the percentage of all input sites that are controls vs. cases -- in a real application there will be many more controls than cases
+# - Precision-recall curve, compare w/ ROC
 # - Penalize sites where the eQTL/GWAS p-value aren't high enough (set them to 0 or lower or something)
+# - Figure out what to do with sites where one of the methods fails running (right now, we throw them away)
 # - Try it with other methods (beyond coloc and RTC)
 # - Compare each method when at its best
 

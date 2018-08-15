@@ -83,7 +83,7 @@ for i in range(num_tests):
         w.write(config_template.format(i, base_dir, base_last_dir, "{0}/hg19/eqtl/eqtl_genotypes{1}.vcf.gz".format(base_dir, i), "{0}/hg19/eqtl/eqtl_phenotypes{1}.bed.gz".format(base_dir, i)))
 
     # Get it going
-    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/rtc.config", shell=True)
+    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/rtc.config 8", shell=True)
 
 # (Later: Separate script)
 
