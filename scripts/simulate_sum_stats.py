@@ -44,8 +44,11 @@ def main():
 
     for i in range(settings["total_test_sites"]):
 
+        random.seed(i)
+        
         # Loop until we get a variant that works
         while True:
+
             # Store settings for current run, for easy reference
             settings["current_run"] = {}
 
@@ -71,10 +74,14 @@ def main():
                 continue
 
             eqtl_phenotypes = get_expression_phenotypes(eqtl_effect_sizes)
+            peer_factors = simulate_peer_factors(eqtl_phenotypes, i)
 
             # Finally, create summary statistics
             sum_stats = make_sum_stats(eqtl_phenotypes)
             (eqtls, gwas) = sum_stats
+
+            peer_eqtls = call_eqtls_with_peer(eqtl_phenotypes, peer_factors)
+            write_peer_sumstats(peer_eqtls, i)
 
             write_sumstats(eqtls, gwas, i)
             write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, locus, i)
@@ -271,6 +278,19 @@ def get_expression_phenotypes(eqtl_effect_sizes):
 
     return phenos
 
+def simulate_peer_factors(phenos, index):
+    pheno_var = np.var(phenos)
+    total_var = pheno_var / settings["peer_fraction_var_explained"]
+    peer_factors = np.random.normal(phenos, total_var-pheno_var, len(phenos))
+
+    with open("{0}/hg19/eqtl/peer_factors{1}.txt".format(base_output_dir, index), "w") as w:
+        header = "\t".join(["ID" + str(i) for i in range(len(phenos))]) + "\n"
+        w.write(header)
+        w.write("\t".join([str(pf) for pf in peer_factors]))
+        w.write("\n")
+
+    return peer_factors
+
 def write_expression_phenotypes(phenos, index, locus):
     # We do this because RTC needs to re-call eQTLs with various SNPs regressed out
     with open("{0}/hg19/eqtl/eqtl_phenotypes{1}.bed".format(base_output_dir, index), "w") as w:
@@ -335,6 +355,30 @@ def call_eqtls(eqtl_phenotypes):
         eqtls.append((slope, std_err, p_value))
     return eqtls
 
+def call_eqtls_with_peer(eqtl_phenotypes, peer):
+    # Load genotypes
+    # Read haplotypes for each individual
+    haps = pd.read_csv("/users/mgloud/projects/coloc_comparisons/tmp/hapgen2_eqtl.out.controls.haps", sep=" ", header=None)
+    genos = np.add(haps.iloc[:, range(0,haps.shape[1]-1,2)].as_matrix(), haps.iloc[:, range(1,haps.shape[1]-1,2)].as_matrix())
+
+    # Get residuals for gene expression
+    slope, intercept, r_value, p_value, std_err = stats.linregress(peer, eqtl_phenotypes)
+    preds = peer * slope + intercept
+    residuals = eqtl_phenotypes - preds
+
+    # Call eQTLs
+    eqtls = []
+    for i in range(genos.shape[0]):
+        predictors = genos[i,:]
+        slope, intercept, r_value, p_value, std_err = stats.linregress(predictors, residuals)
+        if np.isnan(slope):
+            slope = 0
+            std_err = 1
+        eqtls.append((slope, std_err, p_value))
+    return eqtls
+
+
+
 def run_gwas():
     # Load genotypes
     # Read haplotypes for each individual
@@ -390,6 +434,31 @@ def write_sumstats(eqtls, gwas, index):
     subprocess.check_call("bgzip -f {0}/hg19/eqtl/eqtl_sumstats{1}.txt".format(base_output_dir, index), shell=True)
     subprocess.check_call("tabix -f -S 1 -s 4 -b 5 -e 5 {0}/hg19/gwas/gwas_sumstats{1}.txt.gz".format(base_output_dir, index), shell=True)
     subprocess.check_call("tabix -f -S 1 -s 5 -b 6 -e 6 {0}/hg19/eqtl/eqtl_sumstats{1}.txt.gz".format(base_output_dir, index), shell=True)
+
+def write_peer_sumstats(eqtls, index):
+    vcf = pd.read_csv("/users/mgloud/projects/coloc_comparisons/tmp/tmp.vcf", sep="\t")
+
+    # Filter down to a min MAF of 0.05 for now
+    def alt_af(x):
+        af = x.split("AF=")[1].split(";")[0]
+        if "," in af:
+            return 0
+        af = float(af)
+        return(af)
+    vcf['AF'] = vcf['INFO'].apply(alt_af)
+ 
+    with open("{0}/hg19/eqtl/eqtl_peer_sumstats{1}.txt".format(base_output_dir, index), "w") as w:
+        w.write("feature\trsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref\talt\teffect_af\tbeta\tse\tzscore\tpvalue\tN\n")
+        for i in range(vcf.shape[0]):
+            var = vcf.iloc[i, :]
+            e = eqtls[i]
+            variant_id = "{0}_{1}_{2}_{3}_hg19".format(var['#CHROM'], var["POS"], var["REF"], var["ALT"])
+            w.write("nameless_gene\t{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\n".format(var['ID'], variant_id, "hg19", var['#CHROM'], var["POS"], var["REF"], var["ALT"], var["AF"], e[0], e[1], e[0] / e[1], e[2], settings["current_run"]["eqtl_sample_size"]))
+
+    # bgzip and tabix
+    subprocess.check_call("bgzip -f {0}/hg19/eqtl/eqtl_peer_sumstats{1}.txt".format(base_output_dir, index), shell=True)
+    subprocess.check_call("tabix -f -S 1 -s 5 -b 6 -e 6 {0}/hg19/eqtl/eqtl_peer_sumstats{1}.txt.gz".format(base_output_dir, index), shell=True)
+
 
 def write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, locus, index):
     with open("{0}/answer_key.txt".format(base_output_dir), "a") as a:
