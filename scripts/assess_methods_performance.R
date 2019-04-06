@@ -1,14 +1,7 @@
 # Load all results, concatenate them
 
-# NOTE: TODO:
-# - Right now, we skip some test loci simply because the pipeline
-#   sees a top SNP somewhere on the edge of the region and anchors on that SNP.
-#   For most methods this means the site is skipped.
-#   I need to fix it so that we always anchor on the central (original GWAS) SNP.
-#   This seed SNP is now being recorded at the time of the simulations
-
 # TODO: We also need to make sure the set being compared by the different methods is the same
-# (should really just use the results being compared with the Ensembl method). Because if a 
+# (should really just use the results being compared with the ensemble method). Because if a 
 # site is missing it's not obvious what info that contains right now...and I suspect that
 # it's actually making it easier on something like COLOC if this site is just thrown away
 # since it's likely to be a negative
@@ -68,6 +61,7 @@ compare_methods = function(answer_key, timestamp)
 	coloc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/coloc-comparisons/", timestamp)
 	rtc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/rtc-comparisons/", timestamp)
 	twas_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/twas-comparisons/", timestamp)
+	bl_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/baseline-comparisons/", timestamp)
 
 	# 
 	# Part 1: Compare methods' performance on simulated data
@@ -90,14 +84,19 @@ compare_methods = function(answer_key, timestamp)
 	bf_results = get_caviarbf_results(caviarbf_base_dir)
 	bf_problems = gsub("eqtl_sumstats", "", bf_results$eqtl_file)
 	bf_problems = as.numeric(gsub("_txt_gz", "", bf_problems))
-	twas_results = get_twas_results(twas_base_dir)
-	twas_problems = gsub("eqtl_sumstats", "", twas_results$eqtl_file)
-	twas_problems = as.numeric(gsub("_txt_gz", "", twas_problems))
+	bl_results = get_baseline_results(bl_base_dir)
+	bl_problems = gsub("eqtl_sumstats", "", bl_results$eqtl_file)
+	bl_problems = as.numeric(gsub("_txt_gz", "", bl_problems))
+	
+	#twas_results = get_twas_results(twas_base_dir)
+	#twas_problems = gsub("eqtl_sumstats", "", twas_results$eqtl_file)
+	#twas_problems = as.numeric(gsub("_txt_gz", "", twas_problems))
 
 	problems = rtc_problems[rtc_problems %in% finemap_problems]
 	problems = problems[problems %in% coloc_problems]
 	problems = problems[problems %in% bf_problems]
-	problems = problems[problems %in% twas_problems]
+	problems = problems[problems %in% bl_problems]
+	#problems = problems[problems %in% twas_problems]
 	problems = problems[problems %in% answer_key$test_case]
 
 	selection = match(answer_indices, problems)
@@ -111,22 +110,27 @@ compare_methods = function(answer_key, timestamp)
 	clpp = scale(finemap_results$clpp[match(problem_set, finemap_problems)])
 	clpp_mod = scale(finemap_results$clpp_mod[match(problem_set, finemap_problems)])
 	bf_clpp = scale(bf_results$clpp[match(problem_set, bf_problems)])
-	twas_p = scale(twas_results$twas_log_pval[match(problem_set, twas_problems)])
+	bl = scale(bl_results$baseline_pval[match(problem_set, bl_problems)])
+	bl3 = scale(bl_results$baseline_pval3[match(problem_set, bl_problems)])
+	#twas_p = scale(twas_results$twas_log_pval[match(problem_set, twas_problems)])
 
 	plot(roc(answers, as.numeric(clpp)), print.auc = TRUE, col = "black", print.auc.x = 0.2, print.auc.y = 0.32, main = "Colocalization detection performance")
 	plot(roc(answers, as.numeric(clpp_mod)), print.auc = TRUE, col = "red", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.28)
 	plot(roc(answers, as.numeric(h4pp)), print.auc = TRUE, col = "blue", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.24)
 	plot(roc(answers, as.numeric(rtc)), print.auc = TRUE, col = "green", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.20)
 	plot(roc(answers, as.numeric(bf_clpp)), print.auc = TRUE, col = "gray", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.16)
-	plot(roc(answers, as.numeric(twas_p)), print.auc = TRUE, col = "orange", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.12)
+	plot(roc(answers, as.numeric(bl)), print.auc = TRUE, col = "turquoise3", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.04)
+	plot(roc(answers, as.numeric(bl3)), print.auc = TRUE, col = "yellowgreen", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.36)
+	#plot(roc(answers, as.numeric(twas_p)), print.auc = TRUE, col = "orange", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.12)
 
 
 
-	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + twas_p
+	#ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + twas_p
+	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + bl + bl3 #+ twas_p
 	ensemble = ensemble / max(ensemble)
 	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.08 )
-	legend(0.9, 0.3, legend=c("FINEMAP-CLPP", "FINEMAP-CLPP_mod", "COLOC", "RTC", "CAVIARBF", "TWAS", "ensemble"),
-	              col=c("black", "red", "blue", "green", "gray", "orange", "purple"), bg="white", lty=1, cex=0.8, lwd=4)
+	legend(0.9, 0.3, legend=c("FINEMAP-CLPP", "FINEMAP-CLPP_mod", "COLOC", "RTC", "CAVIARBF", "TWAS", "ensemble", "baseline", "baseline3"),
+	              col=c("black", "red", "blue", "green", "gray", "orange", "purple", "turquoise3", "yellowgreen"), bg="white", lty=1, cex=0.8, lwd=4)
 	# Naive ensemble performance is comparable with the best methods
 
 	readline("Press enter:")
@@ -137,7 +141,9 @@ compare_methods = function(answer_key, timestamp)
 	plot(pr.curve(h4pp[which(answers==1)], h4pp[which(answers==0)], curve=TRUE), add=TRUE, color="blue")
 	plot(pr.curve(rtc[which(answers==1)], rtc[which(answers==0)], curve=TRUE), add=TRUE, color="green")
 	plot(pr.curve(bf_clpp[which(answers==1)], bf_clpp[which(answers==0)], curve=TRUE), add=TRUE, color="gray")
-	plot(pr.curve(twas_p[which(answers==1)], twas_p[which(answers==0)], curve=TRUE), add=TRUE, color="orange")
+	plot(pr.curve(bl[which(answers==1)], bl[which(answers==0)], curve=TRUE), add=TRUE, color="turquoise3")
+	plot(pr.curve(bl3[which(answers==1)], bl3[which(answers==0)], curve=TRUE), add=TRUE, color="yellowgreen")
+	#plot(pr.curve(twas_p[which(answers==1)], twas_p[which(answers==0)], curve=TRUE), add=TRUE, color="orange")
 	plot(pr.curve(ensemble[which(answers==1)], ensemble[which(answers==0)], curve=TRUE), add=TRUE, color="purple")
 
 	readline("Press enter:")
@@ -145,7 +151,8 @@ compare_methods = function(answer_key, timestamp)
 
 	# Note of course that any site causing one or more methods to fail completely
 	# will not currently appear in this table.
-	results_table = data.frame(list(coloc_h4pp=h4pp, rtc=rtc, finemap_clpp=clpp, finemap_clpp_mod=clpp_mod, caviar_bf_clpp=bf_clpp, twas_logp=twas_p))
+	#results_table = data.frame(list(coloc_h4pp=h4pp, rtc=rtc, finemap_clpp=clpp, finemap_clpp_mod=clpp_mod, caviar_bf_clpp=bf_clpp, twas_logp=twas_p))
+	results_table = data.frame(list(coloc_h4pp=h4pp, rtc=rtc, finemap_clpp=clpp, finemap_clpp_mod=clpp_mod, caviar_bf_clpp=bf_clpp, baseline_p=bl, baseline3_p=bl3))
 	# These two plots are illuminating. Goal will be to pick out some of the off-diagonal elements and to figure out
 	# why they're scoring differently in the different methods. Particularly for the very different methods.
 	pairs(results_table, lower.panel=NULL)
@@ -155,6 +162,7 @@ compare_methods = function(answer_key, timestamp)
 	readline("Press enter:")
 	
 	return(FALSE)
+
 	#
 	# Part 2: Modify parameters of the methods themselves
 	#
@@ -425,7 +433,25 @@ get_twas_results = function(base_dir)
 	return(all_results)
 }
 
+get_baseline_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("baseline", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+}
+
+
+
 # This function is never called and is currently used for nothing
+# LOL
 nothing = function()
 {
 	#
