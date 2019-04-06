@@ -1,23 +1,141 @@
 require(readr)
 require(dplyr)
 
+# Load all colocalization results for different methods
 coloc = read_delim("/users/mgloud/projects/coloc_comparisons/output/coloc_vs_finemap/coloc_results.txt", delim="\t")
 finemap = read_delim("/users/mgloud/projects/coloc_comparisons/output/coloc_vs_finemap/finemap_results.txt", delim="\t")
+finemap2 = read_delim("/users/mgloud/projects/coloc_comparisons/output/coloc_vs_finemap/finemap_c2_results.txt", delim="\t")
+baseline = read_delim("/users/mgloud/projects/coloc_comparisons/output/baseline/baseline_results.txt", delim="\t")
+names(baseline)[6] = "base_gwas_file"
 
-combo = inner_join(finemap, coloc, by=c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file"))
-combo = combo[combo$n_snps.x >= 50 & combo$n_snps.y >= 50,]
+idx = which(!(names(baseline) %in% c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file")))
+names(baseline)[idx] = paste0(names(baseline[idx]), "_baseline")
+idx = which(!(names(finemap) %in% c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file")))
+names(finemap)[idx] = paste0(names(finemap[idx]), "_finemap_c1")
+idx = which(!(names(finemap2) %in% c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file")))
+names(finemap2)[idx] = paste0(names(finemap2[idx]), "_finemap_c2")
+idx = which(!(names(coloc) %in% c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file")))
+names(coloc)[idx] = paste0(names(coloc[idx]), "_coloc")
 
-cor(combo$clpp, combo$clpp_h4, use="complete.obs")
-cor(combo$clpp, combo$clpp_h4, use="complete.obs", method="spearman")
-plot(combo$clpp, combo$clpp_h4)
-combo$clpp_rank = rank(combo$clpp)
-combo$h4_rank = rank(combo$clpp_h4)
-plot(combo$clpp_rank, combo$h4_rank, xlab="Order of FINEMAP results", ylab = "Order of COLOC results", pch=18)
+# Join all results for the same locus into a single row with scores for each method
+combo = full_join(baseline, coloc, by=c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file"))
+combo = full_join(combo, finemap2, by=c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file"))
+combo = full_join(combo, finemap, by=c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file"))
+
+
+#######################################################
+# Compare COLOC and FINEMAP with one causal variant max
+#######################################################
+subcombo = combo[combo$n_snps_finemap_c1 >= 50 & combo$n_snps_coloc >= 50,]
+
+cor(subcombo$clpp_finemap_c1, subcombo$clpp_h4_coloc, use="complete.obs")
+cor(subcombo$clpp_finemap_c1, subcombo$clpp_h4_coloc, use="complete.obs", method="spearman")
+plot(subcombo$clpp_finemap_c1, subcombo$clpp_h4_coloc)
+subcombo$clpp_finemap_c1_rank = rank(subcombo$clpp_finemap_c1)
+subcombo$h4_rank = rank(subcombo$clpp_h4_coloc)
+plot(subcombo$clpp_finemap_c1_rank, subcombo$h4_rank, xlab="Order of FINEMAP results", ylab = "Order of COLOC results", pch=18)
 
 # Find points that are very different between the two methods
-disagreements = combo[na.omit(abs(combo$clpp_rank - combo$h4_rank) > 1000),]
+disagreements = subcombo[na.omit(abs(subcombo$clpp_finemap_c1_rank - subcombo$h4_rank) > 1000),]
 # Sort them from most to least disagreeing
-disagreements = disagreements[rev(order(abs(disagreements$clpp_rank - disagreements$h4_rank))),]
-points(disagreements$clpp_rank, disagreements$h4_rank, col="red", pch=18)
+disagreements = disagreements[rev(order(abs(disagreements$clpp_finemap_c1_rank - disagreements$h4_rank))),]
+points(disagreements$clpp_finemap_c1_rank, disagreements$h4_rank, col="red", pch=18)
+
+#######################################################
+# Compare FINEMAP with 1 vs. 2 causal variants max
+#######################################################
+subcombo = combo[combo$n_snps_finemap_c1 >= 50 & combo$n_snps_finemap_c2 >= 50,]
+cor(subcombo$clpp_finemap_c1, subcombo$clpp_finemap_c2, use="complete.obs")
+cor(subcombo$clpp_finemap_c1, subcombo$clpp_finemap_c2, use="complete.obs", method="spearman")
+plot(subcombo$clpp_finemap_c1, subcombo$clpp_finemap_c2)
+subcombo$clpp_finemap_c1_rank = rank(subcombo$clpp_finemap_c1)
+subcombo$clpp_finemap_c2_rank = rank(subcombo$clpp_finemap_c2)
+plot(subcombo$clpp_finemap_c1_rank, subcombo$clpp_finemap_c2_rank, xlab="FINEMAP (max 1 causal variant)", ylab = "FINEMAP (max 2 causal variants)", pch=18)
+
+# Find points that are very different between the two methods
+disagreements = subcombo[na.omit(abs(subcombo$clpp_finemap_c1_rank - subcombo$clpp_finemap_c2_rank) > 1000),]
+# Sort them from most to least disagreeing
+signed_disagreements = disagreements[rev(order(disagreements$clpp_finemap_c1_rank - disagreements$clpp_finemap_c2_rank)),]
+disagreements = disagreements[rev(order(abs(disagreements$clpp_finemap_c1_rank - disagreements$clpp_finemap_c2_rank))),]
+points(disagreements$clpp_finemap_c1_rank, disagreements$clpp_finemap_c2_rank, col="red", pch=18)
+
+
+############################################
+# Compare FINEMAP w/ baseline
+############################################
+
+# Baseline 1
+
+subcombo = combo[combo$n_snps_finemap_c1 >= 50 & combo$n_snps_baseline >= 50,]
+
+cor(subcombo$clpp_finemap_c1, subcombo$baseline_pval_baseline, use="complete.obs")
+cor(subcombo$clpp_finemap_c1, subcombo$baseline_pval_baseline, use="complete.obs", method="spearman")
+plot(subcombo$clpp_finemap_c1, subcombo$baseline_pval_baseline)
+subcombo$clpp_finemap_c1_rank = rank(subcombo$clpp_finemap_c1)
+subcombo$baseline_rank = rank(subcombo$baseline_pval_baseline)
+plot(subcombo$clpp_finemap_c1_rank, subcombo$baseline_rank, xlab="Order of FINEMAP results", ylab = "Order of baseline results", pch=18)
+
+# Find points that are very different between the two methods
+disagreements = subcombo[na.omit(abs(subcombo$clpp_finemap_c1_rank - subcombo$baseline_rank) > 1000),]
+# Sort them from most to least disagreeing
+disagreements = disagreements[rev(order(abs(disagreements$clpp_finemap_c1_rank - disagreements$baseline_rank))),]
+points(disagreements$clpp_finemap_c1_rank, disagreements$baseline_rank, col="red", pch=18)
+
+
+# Baseline 2 (right now it turns out to just be the same thing...probably b/c of selection criteria
+subcombo = combo[combo$n_snps_finemap_c1 >= 50 & combo$n_snps_baseline >= 50 & combo$baseline_pval_baseline > 1,]
+
+cor(subcombo$clpp_finemap_c1, subcombo$baseline_pval2_baseline, use="complete.obs")
+cor(subcombo$clpp_finemap_c1, subcombo$baseline_pval2_baseline, use="complete.obs", method="spearman")
+plot(subcombo$clpp_finemap_c1, subcombo$baseline_pval2_baseline)
+subcombo$clpp_finemap_c1_rank = rank(subcombo$clpp_finemap_c1)
+subcombo$baseline2_rank = rank(subcombo$baseline_pval2_baseline)
+plot(subcombo$clpp_finemap_c1_rank, subcombo$baseline2_rank, xlab="Order of FINEMAP results", ylab = "Order of baseline results", pch=18)
+
+# Find points that are very different between the two methods
+disagreements = subcombo[na.omit(abs(subcombo$clpp_finemap_c1_rank - subcombo$baseline2_rank) > 1000),]
+# Sort them from most to least disagreeing
+disagreements = disagreements[rev(order(abs(disagreements$clpp_finemap_c1_rank - disagreements$baseline2_rank))),]
+points(disagreements$clpp_finemap_c1_rank, disagreements$baseline2_rank, col="red", pch=18)
+
+# Baseline 2 and FINEMAP-c2
+
+subcombo = combo[combo$n_snps_finemap_c2 >= 50 & combo$n_snps_baseline >= 50,]
+
+cor(subcombo$clpp_finemap_c2, subcombo$baseline_pval_baseline, use="complete.obs")
+cor(subcombo$clpp_finemap_c2, subcombo$baseline_pval_baseline, use="complete.obs", method="spearman")
+plot(subcombo$clpp_finemap_c2, subcombo$baseline_pval_baseline)
+subcombo$clpp_finemap_c2_rank = rank(subcombo$clpp_finemap_c2)
+subcombo$baseline_rank = rank(subcombo$baseline_pval_baseline)
+plot(subcombo$clpp_finemap_c2_rank, subcombo$baseline_rank, xlab="Order of FINEMAP-c2 results", ylab = "Order of baseline results", pch=18)
+
+# Find points that are very different between the two methods
+disagreements = subcombo[na.omit(abs(subcombo$clpp_finemap_c2_rank - subcombo$baseline_rank) > 1000),]
+# Sort them from most to least disagreeing
+disagreements = disagreements[rev(order(abs(disagreements$clpp_finemap_c2_rank - disagreements$baseline_rank))),]
+points(disagreements$clpp_finemap_c2_rank, disagreements$baseline_rank, col="red", pch=18)
+
+
+
+############################################
+# Compare COLOC w/ baseline
+############################################
+
+subcombo = combo[combo$n_snps_coloc >= 50 & combo$n_snps_baseline >= 50,]
+
+cor(subcombo$clpp_h4_coloc, subcombo$baseline_pval_baseline, use="complete.obs")
+cor(subcombo$clpp_h4_coloc, subcombo$baseline_pval_baseline, use="complete.obs", method="spearman")
+plot(subcombo$clpp_h4_coloc, subcombo$baseline_pval_baseline)
+subcombo$baseline_rank = rank(subcombo$baseline_pval_baseline)
+subcombo$h4_rank = rank(subcombo$clpp_h4_coloc)
+plot(subcombo$baseline_rank, subcombo$h4_rank, xlab="Order of baseline results", ylab = "Order of COLOC results", pch=18)
+
+# Find points that are very different between the two methods
+disagreements = subcombo[na.omit(abs(subcombo$baseline_rank - subcombo$h4_rank) > 1000),]
+# Sort them from most to least disagreeing
+disagreements = disagreements[rev(order(abs(disagreements$baseline_rank - disagreements$h4_rank))),]
+points(disagreements$baseline_rank, disagreements$h4_rank, col="red", pch=18)
+
+
 
 

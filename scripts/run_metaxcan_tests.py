@@ -11,12 +11,12 @@ num_tests = int(sys.argv[2])
 
 config_template = '''
 {{
-        "out_dir_group": "twas-comparisons/{2}",
+        "out_dir_group": "metaxcan-comparisons/{2}",
 
         "selection_basis": "snps_from_list",
 
 	"snp_list_file":
-                "/users/mgloud/projects/coloc_comparisons/tmp/twas_snp_list.txt",
+                "/users/mgloud/projects/coloc_comparisons/tmp/metaxcan_snp_list.txt",
 
         "selection_thresholds":
         {{
@@ -31,12 +31,12 @@ config_template = '''
 	
 	"eqtl_experiments":	
 	{{
-            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": {{"ref": "ref-file"}}
+            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": {{"ref": "1kgenomes"}}
 	}},
 
 	"methods": 
 	{{
-		"twas":{{}}
+		"coloc":{{}}
 	}},
 
         "ref_genomes": 
@@ -51,19 +51,8 @@ config_template = '''
 
                         "N": 
 				2504
-	        }},
-                "ref-file":
-                {{
-                    "file":
-                        "{1}/hg19/eqtl/eqtl_genotypes{0}.vcf.gz", "phenos": "{1}/hg19/eqtl/eqtl_phenotypes{0}.bed.gz"}},
-                    "af_attribute":
-                        "",
-
-                    "N":
-                        1000
-                }}
+	        }}
         }}
-
 }}
 '''
 
@@ -73,7 +62,7 @@ if base_dir[-1] == "/":
     base_dir = base_dir[:-1]
 base_last_dir = base_dir.strip().split("/")[-1]
 
-subprocess.call("rm -rf /users/mgloud/projects/brain_gwas/output/twas-comparisons/{0}".format(base_last_dir), shell=True)
+subprocess.call("rm -rf /users/mgloud/projects/brain_gwas/output/metaxcan-comparisons/{0}".format(base_last_dir), shell=True)
 
 answers = {}
 with open(base_dir + "/answer_key.txt") as f:
@@ -86,23 +75,13 @@ with open(base_dir + "/answer_key.txt") as f:
 
 for i in range(num_tests):
     
-    with open("/users/mgloud/projects/coloc_comparisons/tmp/twas_snp_list.txt", "w") as w:
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/metaxcan_snp_list.txt", "w") as w:
         w.write("{0}\t{1}\n".format(answers[i]["seed_chrom"], answers[i]["seed_pos"]))
 
     # Dump the config template to a file
-    with open("/users/mgloud/projects/coloc_comparisons/tmp/twas.config", "w") as w:
-        w.write(config_template.format(i, base_dir, base_last_dir))
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/metaxcan.config", "w") as w:
+        w.write(config_template.format(i, base_dir, base_last_dir, n_gwas, cc_ratio_gwas, n_eqtl))
 
     # Get it going
-    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/twas.config 1", shell=True)
+    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/metaxcan.config 8", shell=True)
 
-# (Later: Separate script)
-
-# Parse eCAVIAR results file to see what we find
-
-# Compile all results into a sort of ROC curve;
-# probably want to do this in R
-
-# Can also stratify results based on the magnitude of
-# effect sizes and stuff, see how much we're sensitive to
-# parameters like that

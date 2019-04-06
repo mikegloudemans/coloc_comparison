@@ -505,9 +505,7 @@ main()
 # TODO now:
 # - Implement baseline method: max (-log eQTL + -log GWAS pval) across all SNPs at the site...
 # - Replot with more test cases
-# - Precision-recall curve, compare w/ ROC
 # - Penalize sites where the eQTL/GWAS p-value aren't high enough (set them to 0 or lower or something)
 # - Figure out what to do with sites where one of the methods fails running (right now, we throw them away)
-# - Try it with other methods (beyond coloc and RTC)
-# - Compare each method when at its best
+# - Compare each method when at its best (optimizing params)
 
