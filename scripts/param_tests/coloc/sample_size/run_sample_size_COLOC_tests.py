@@ -15,6 +15,11 @@ def main():
 
     for eqtl_ss in samp_sizes:
         for gwas_ss in samp_sizes:
+
+            # To avoid deleting files in use by other runs...
+            while int(subprocess.check_output('''ps -ef | grep "python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/rna_editing/tmp/coloc_ss_config" | grep -v grep | wc -l''', shell=True)) > 0:
+                time.sleep(1)
+
             # Reset things fresh on each run, so we're not mixing results
             subprocess.call("rm -rf /users/mgloud/projects/brain_gwas/output/coloc-sample-size-test/eqtl_{0}/gwas_{1}/*".format(eqtl_ss, gwas_ss), shell=True)
 
@@ -86,6 +91,9 @@ template = '''
         {{
                 "coloc":{{}}
         }},
+
+        "plot_all":
+            "True",
 
         "ref_genomes": 
         {{

@@ -74,24 +74,28 @@ def main():
                 continue
 
             eqtl_phenotypes = get_expression_phenotypes(eqtl_effect_sizes)
-            peer_factors = simulate_peer_factors(eqtl_phenotypes, i)
+            if "simulate_peer" in settings and settings["simulate_peer"] == "True":
+                peer_factors = simulate_peer_factors(eqtl_phenotypes, i)
 
             # Finally, create summary statistics
             sum_stats = make_sum_stats(eqtl_phenotypes)
             (eqtls, gwas) = sum_stats
 
-            peer_eqtls = call_eqtls_with_peer(eqtl_phenotypes, peer_factors)
-            write_peer_sumstats(peer_eqtls, i)
+            if "simulate_peer" in settings and settings["simulate_peer"] == "True":
+                peer_eqtls = call_eqtls_with_peer(eqtl_phenotypes, peer_factors)
+                write_peer_sumstats(peer_eqtls, i)
 
             write_sumstats(eqtls, gwas, i)
             write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, locus, i)
             write_expression_phenotypes(eqtl_phenotypes, i, locus)
-            write_genotypes_as_vcf(i, locus)
+            if not "no_genotypes" in settings or settings["no_genotypes"] == "False":
+                write_genotypes_as_vcf(i, locus)
 
             break
 
     # liftOver to hg38
-    run_liftover(settings)
+    if not "liftover" in settings or settings["liftover"] == "True":
+        run_liftover(settings)
 
 def get_eqtl_effect_sizes(settings, gwas_effect_sizes):
 
@@ -279,17 +283,23 @@ def get_expression_phenotypes(eqtl_effect_sizes):
     return phenos
 
 def simulate_peer_factors(phenos, index):
-    pheno_var = np.var(phenos)
-    total_var = pheno_var / settings["peer_fraction_var_explained"]
-    peer_factors = np.random.normal(phenos, total_var-pheno_var, len(phenos))
 
-    with open("{0}/hg19/eqtl/peer_factors{1}.txt".format(base_output_dir, index), "w") as w:
-        header = "\t".join(["ID" + str(i) for i in range(len(phenos))]) + "\n"
-        w.write(header)
-        w.write("\t".join([str(pf) for pf in peer_factors]))
-        w.write("\n")
+    all_peer_factors = []
 
-    return peer_factors
+    for frac in settings["peer_fraction_var_explained"]:
+        pheno_var = np.var(phenos)
+        total_var = pheno_var / frac
+        peer_factors = np.random.normal(phenos, total_var-pheno_var, len(phenos))
+
+        with open("{0}/hg19/eqtl/peer_factors{1}_{2}.txt".format(base_output_dir, index, frac), "w") as w:
+            header = "\t".join(["ID" + str(i) for i in range(len(phenos))]) + "\n"
+            w.write(header)
+            w.write("\t".join([str(pf) for pf in peer_factors]))
+            w.write("\n")
+
+        all_peer_factors.append(peer_factors)
+
+    return all_peer_factors
 
 def write_expression_phenotypes(phenos, index, locus):
     # We do this because RTC needs to re-call eQTLs with various SNPs regressed out
@@ -356,26 +366,33 @@ def call_eqtls(eqtl_phenotypes):
     return eqtls
 
 def call_eqtls_with_peer(eqtl_phenotypes, peer):
+
     # Load genotypes
     # Read haplotypes for each individual
     haps = pd.read_csv("/users/mgloud/projects/coloc_comparisons/tmp/hapgen2_eqtl.out.controls.haps", sep=" ", header=None)
     genos = np.add(haps.iloc[:, range(0,haps.shape[1]-1,2)].as_matrix(), haps.iloc[:, range(1,haps.shape[1]-1,2)].as_matrix())
 
-    # Get residuals for gene expression
-    slope, intercept, r_value, p_value, std_err = stats.linregress(peer, eqtl_phenotypes)
-    preds = peer * slope + intercept
-    residuals = eqtl_phenotypes - preds
+    all_eqtls = []
 
-    # Call eQTLs
-    eqtls = []
-    for i in range(genos.shape[0]):
-        predictors = genos[i,:]
-        slope, intercept, r_value, p_value, std_err = stats.linregress(predictors, residuals)
-        if np.isnan(slope):
-            slope = 0
-            std_err = 1
-        eqtls.append((slope, std_err, p_value))
-    return eqtls
+    for p in peer:
+        # Get residuals for gene expression
+        slope, intercept, r_value, p_value, std_err = stats.linregress(p, eqtl_phenotypes)
+        preds = p * slope + intercept
+        residuals = eqtl_phenotypes - preds
+
+        # Call eQTLs
+        eqtls = []
+        for i in range(genos.shape[0]):
+            predictors = genos[i,:]
+            slope, intercept, r_value, p_value, std_err = stats.linregress(predictors, residuals)
+            if np.isnan(slope):
+                slope = 0
+                std_err = 1
+            eqtls.append((slope, std_err, p_value))
+
+        all_eqtls.append(eqtls)
+
+    return all_eqtls
 
 
 
@@ -447,17 +464,19 @@ def write_peer_sumstats(eqtls, index):
         return(af)
     vcf['AF'] = vcf['INFO'].apply(alt_af)
  
-    with open("{0}/hg19/eqtl/eqtl_peer_sumstats{1}.txt".format(base_output_dir, index), "w") as w:
-        w.write("feature\trsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref\talt\teffect_af\tbeta\tse\tzscore\tpvalue\tN\n")
-        for i in range(vcf.shape[0]):
-            var = vcf.iloc[i, :]
-            e = eqtls[i]
-            variant_id = "{0}_{1}_{2}_{3}_hg19".format(var['#CHROM'], var["POS"], var["REF"], var["ALT"])
-            w.write("nameless_gene\t{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\n".format(var['ID'], variant_id, "hg19", var['#CHROM'], var["POS"], var["REF"], var["ALT"], var["AF"], e[0], e[1], e[0] / e[1], e[2], settings["current_run"]["eqtl_sample_size"]))
+    for eqtl_index in range(len(eqtls)): 
 
-    # bgzip and tabix
-    subprocess.check_call("bgzip -f {0}/hg19/eqtl/eqtl_peer_sumstats{1}.txt".format(base_output_dir, index), shell=True)
-    subprocess.check_call("tabix -f -S 1 -s 5 -b 6 -e 6 {0}/hg19/eqtl/eqtl_peer_sumstats{1}.txt.gz".format(base_output_dir, index), shell=True)
+        with open("{0}/hg19/eqtl/eqtl_peer_sumstats{1}_{2}.txt".format(base_output_dir, index, settings["peer_fraction_var_explained"][eqtl_index]), "w") as w:
+            w.write("feature\trsid\tvariant_id\tgenome_build\tchr\tsnp_pos\tref\talt\teffect_af\tbeta\tse\tzscore\tpvalue\tN\n")
+            for i in range(vcf.shape[0]):
+                var = vcf.iloc[i, :]
+                e = eqtls[eqtl_index][i]
+                variant_id = "{0}_{1}_{2}_{3}_hg19".format(var['#CHROM'], var["POS"], var["REF"], var["ALT"])
+                w.write("nameless_gene\t{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\n".format(var['ID'], variant_id, "hg19", var['#CHROM'], var["POS"], var["REF"], var["ALT"], var["AF"], e[0], e[1], e[0] / e[1], e[2], settings["current_run"]["eqtl_sample_size"]))
+
+        # bgzip and tabix
+        subprocess.check_call("bgzip -f {0}/hg19/eqtl/eqtl_peer_sumstats{1}_{2}.txt".format(base_output_dir, index, settings["peer_fraction_var_explained"][eqtl_index]), shell=True)
+        subprocess.check_call("tabix -f -S 1 -s 5 -b 6 -e 6 {0}/hg19/eqtl/eqtl_peer_sumstats{1}_{2}.txt.gz".format(base_output_dir, index, settings["peer_fraction_var_explained"][eqtl_index]), shell=True)
 
 
 def write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, locus, index):
@@ -473,7 +492,7 @@ def write_answer_key(gwas_effect_sizes, eqtl_effect_sizes, locus, index):
         a.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(index, locus[0], locus[1], info, settings["current_run"]["gwas_case_sample_size"], settings["current_run"]["gwas_control_sample_size"], settings["current_run"]["eqtl_sample_size"], len(gwas_effect_sizes)))
 
 def run_liftover(settings):
-    subprocess.check_call("python /users/mgloud/projects/coloc_comparisons/scripts/liftover_sumstats_hg19_to_hg38.py {0} {1}".format(basedir, settings["total_test_sites"]), shell=True)
+    subprocess.check_call("python /users/mgloud/projects/coloc_comparisons/scripts/liftover_sumstats_hg19_to_hg38.py {0} {1}".format(base_output_dir, settings["total_test_sites"]), shell=True)
 
 
 if __name__ == "__main__":
