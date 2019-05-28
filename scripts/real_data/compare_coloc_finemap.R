@@ -1,5 +1,6 @@
 require(readr)
 require(dplyr)
+require(UpSetR)
 
 # Load all colocalization results for different methods
 coloc = read_delim("/users/mgloud/projects/coloc_comparisons/output/coloc_vs_finemap/coloc_results.txt", delim="\t")
@@ -136,6 +137,55 @@ disagreements = subcombo[na.omit(abs(subcombo$baseline_rank - subcombo$h4_rank) 
 disagreements = disagreements[rev(order(abs(disagreements$baseline_rank - disagreements$h4_rank))),]
 points(disagreements$baseline_rank, disagreements$h4_rank, col="red", pch=18)
 
+
+###########################################
+# UpSet plot for all
+###########################################
+
+# Make an array to show the different sets that we can have...
+# Note: Right now this plot's pretty sloppy because we're not sure
+# that the combo was actually tested in all methods...for some, it may
+# have been dropped due to bugs in our pipeline rather than deficiencies
+# of the method itself
+
+combo$test_names = paste(combo$ref_snp, combo$eqtl_file, combo$gwas_trait, combo$base_gwas_file, combo$feature, sep="_")
+stopifnot(length(combo$test_names) == length(unique(combo$test_names)))	# Each test should have a unique ID
+
+upset_matrix = array(-1, dim=c(dim(combo)[1],5))
+dimnames(upset_matrix)[[1]] = combo$test_names
+dimnames(upset_matrix)[[2]] = c("FINEMAP_c1", "FINEMAP_c2", "Baseline_simple", "Baseline_smart", "COLOC")
+
+combo$ranked_finemap_c1 = rank(-combo$clpp_finemap_c1)
+combo$ranked_finemap_c2 = rank(-combo$clpp_finemap_c2)
+combo$ranked_coloc = rank(-combo$clpp_h4_coloc)
+combo$ranked_baseline_simple = rank(-combo$baseline_pval_baseline)
+combo$ranked_baseline_smart = rank(-combo$baseline_pval5_baseline)
+
+rank_threshold = 1000
+for (i in 1:dim(upset_matrix)[1])
+{
+	upset_matrix[i, 1] = (combo[i,]$ranked_finemap_c1 <= rank_threshold)
+	upset_matrix[i, 2] = (combo[i,]$ranked_finemap_c2 <= rank_threshold)
+	upset_matrix[i, 3] = (combo[i,]$ranked_coloc <= rank_threshold)
+	upset_matrix[i, 4] = (combo[i,]$ranked_baseline_simple <= rank_threshold)
+	upset_matrix[i, 5] = (combo[i,]$ranked_baseline_smart <= rank_threshold)
+}
+
+upset_matrix[is.na(upset_matrix)] = 0
+upset_matrix = upset_matrix[rowSums(upset_matrix) > 0,]
+upset_matrix = data.frame(upset_matrix)
+upset_matrix$Names = rownames(upset_matrix)
+
+upset(upset_matrix, 
+      sets = c("FINEMAP_c1", "FINEMAP_c2", "Baseline_simple", "Baseline_smart", "COLOC"), 
+      order.by="freq", matrix.color="blue", point.size=5,
+      sets.bar.color=c("maroon","blue","orange", "green", "red"))
+
+##########################################
+# PCA to determine eigenmethods,
+# using ranks of individual methods 
+# for each site as the features
+##########################################
 
 
 

@@ -111,7 +111,7 @@ compare_methods = function(answer_key, timestamp)
 	clpp_mod = scale(finemap_results$clpp_mod[match(problem_set, finemap_problems)])
 	bf_clpp = scale(bf_results$clpp[match(problem_set, bf_problems)])
 	bl = scale(bl_results$baseline_pval[match(problem_set, bl_problems)])
-	bl3 = scale(bl_results$baseline_pval3[match(problem_set, bl_problems)])
+	bl5 = scale(bl_results$baseline_pval5[match(problem_set, bl_problems)])
 	#twas_p = scale(twas_results$twas_log_pval[match(problem_set, twas_problems)])
 
 	plot(roc(answers, as.numeric(clpp)), print.auc = TRUE, col = "black", print.auc.x = 0.2, print.auc.y = 0.32, main = "Colocalization detection performance")
@@ -120,16 +120,19 @@ compare_methods = function(answer_key, timestamp)
 	plot(roc(answers, as.numeric(rtc)), print.auc = TRUE, col = "green", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.20)
 	plot(roc(answers, as.numeric(bf_clpp)), print.auc = TRUE, col = "gray", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.16)
 	plot(roc(answers, as.numeric(bl)), print.auc = TRUE, col = "turquoise3", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.04)
-	plot(roc(answers, as.numeric(bl3)), print.auc = TRUE, col = "yellowgreen", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.36)
+	plot(roc(answers, as.numeric(bl5)), print.auc = TRUE, col = "yellowgreen", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.36)
 	#plot(roc(answers, as.numeric(twas_p)), print.auc = TRUE, col = "orange", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.12)
 
+	# TODO: Plot a comparison of all baseline models with just COLOC and FINEMAP
 
-
-	#ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + twas_p
-	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + bl + bl3 #+ twas_p
+	# With smart baseline included
+	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + bl5 #+ twas_p
+	# Without baseline included
+	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp #+ twas_p
+	
 	ensemble = ensemble / max(ensemble)
 	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.08 )
-	legend(0.9, 0.3, legend=c("FINEMAP-CLPP", "FINEMAP-CLPP_mod", "COLOC", "RTC", "CAVIARBF", "TWAS", "ensemble", "baseline", "baseline3"),
+	legend(0.9, 0.3, legend=c("FINEMAP-CLPP", "FINEMAP-CLPP_mod", "COLOC", "RTC", "CAVIARBF", "TWAS", "ensemble (no baseline)", "baseline", "smart-baseline"),
 	              col=c("black", "red", "blue", "green", "gray", "orange", "purple", "turquoise3", "yellowgreen"), bg="white", lty=1, cex=0.8, lwd=4)
 	# Naive ensemble performance is comparable with the best methods
 

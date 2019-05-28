@@ -5,6 +5,7 @@
 import glob
 import subprocess
 import sys
+import time
 
 base_dir = sys.argv[1]
 num_tests = int(sys.argv[2])
@@ -62,11 +63,14 @@ base_last_dir = base_dir.strip().split("/")[-1]
 subprocess.call("rm -rf /users/mgloud/projects/brain_gwas/output/baseline-comparisons/{0}".format(base_last_dir), shell=True)
 
 for i in range(num_tests):
-    
+   
     # Dump the config template to a file
-    with open("/users/mgloud/projects/coloc_comparisons/tmp/baseline.config", "w") as w:
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/baseline{0}.config".format(i), "w") as w:
         w.write(config_template.format(i, base_dir, base_last_dir))
 
     # Get it going
-    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/baseline.config 8", shell=True)
+    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/baseline{0}.config 1 &".format(i), shell=True)
+    
+    while int(subprocess.check_output('''ps -ef | grep "python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/baseline" | wc -l''', shell=True)) > 30:
+        time.sleep(0.01)
 

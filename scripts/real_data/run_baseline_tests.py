@@ -54,8 +54,8 @@ def main():
         # Run the test
         subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/tmp/lc_config{0}.config 1 &".format(i), shell=True)
 
-        while int(subprocess.check_output('''ps -ef | grep "python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/tmp/lc_config" | wc -l''', shell=True)) > 16:
-            time.sleep(0.1)
+        while int(subprocess.check_output('''ps -ef | grep "python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/tmp/lc_config" | wc -l''', shell=True)) > 30:
+            time.sleep(0.01)
 
 template = '''
 {
