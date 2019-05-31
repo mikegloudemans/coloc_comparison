@@ -192,15 +192,66 @@ for (i in 1:dim(upset_matrix)[1])
 upset_matrix[is.na(upset_matrix)] = 0
 upset_matrix = upset_matrix[rowSums(upset_matrix) > 0,]
 upset_matrix = data.frame(upset_matrix)
-upset_matrix$Names = rownames(upset_matrix)
+#upset_matrix$Names = rownames(upset_matrix)
+upset_matrix_names = rownames(upset_matrix)
 
 upset(upset_matrix, 
-      sets = c("FINEMAP_c1", "FINEMAP_c2", "COLOC", "Baseline_simple", "Baseline_smart", "SMR_no_HEIDI", "SMR_with_HEIDI"), 
+      sets = dimnames(upset_matrix)[[2]], 
       order.by="freq", matrix.color="blue", point.size=5,
       sets.bar.color=c("maroon","blue","orange", "green", "red", "violet", "cyan"))
 
-# NOTE: This plot may be misleading if we count COLOC and SMR results on methods for which these tests weren't even run
-# due to insufficient data. Maybe try subsetting down to the common denominator here.
+# The above plot may be misleading if we count COLOC and SMR results on methods for which these tests weren't even run
+# due to insufficient data. Try subsetting down to the common denominator here.
+
+# If at least one of the methods wasn't able to run on the study AT ALL, then get rid of that study
+fair_studies = unique(combo[!is.na(combo$smr_neg_log_pval_smr),]$base_gwas_file)
+fair_studies = fair_studies[fair_studies %in% unique(combo[!is.na(combo$clpp_h4_coloc),]$base_gwas_file)]
+fair_studies = fair_studies[fair_studies %in% unique(combo[!is.na(combo$clpp_finemap_c1),]$base_gwas_file)]
+fair_studies = fair_studies[fair_studies %in% unique(combo[!is.na(combo$clpp_finemap_c2),]$base_gwas_file)]
+fair_studies = fair_studies[fair_studies %in% unique(combo[!is.na(combo$baseline_pval_baseline),]$base_gwas_file)]
+fair_studies = fair_studies[fair_studies %in% unique(combo[!is.na(combo$baseline_pval5_baseline),]$base_gwas_file)]
+
+fair_combo = combo[combo$base_gwas_file %in% fair_studies,]
+
+upset_matrix = array(-1, dim=c(dim(fair_combo)[1],7))
+dimnames(upset_matrix)[[1]] = fair_combo$test_names
+dimnames(upset_matrix)[[2]] = c("FINEMAP_c1", "FINEMAP_c2", "COLOC", "Baseline_simple", "Baseline_smart", "SMR_no_HEIDI", "SMR_with_HEIDI")
+
+fair_combo$ranked_finemap_c1 = rank(-fair_combo$clpp_finemap_c1)
+fair_combo$ranked_finemap_c2 = rank(-fair_combo$clpp_finemap_c2)
+fair_combo$ranked_coloc = rank(-fair_combo$clpp_h4_coloc)
+fair_combo$ranked_baseline_simple = rank(-fair_combo$baseline_pval_baseline)
+fair_combo$ranked_baseline_smart = rank(-fair_combo$baseline_pval5_baseline)
+fair_combo$ranked_smr_no_heidi = rank(-fair_combo$smr_neg_log_pval_smr)
+fair_combo$ranked_smr_with_heidi = rank(-fair_combo$smr_heidi_adjusted)
+
+rank_threshold = 1000
+for (i in 1:dim(upset_matrix)[1])
+{
+	upset_matrix[i, 1] = (fair_combo[i,]$ranked_finemap_c1 <= rank_threshold)
+	upset_matrix[i, 2] = (fair_combo[i,]$ranked_finemap_c2 <= rank_threshold)
+	upset_matrix[i, 3] = (fair_combo[i,]$ranked_coloc <= rank_threshold)
+	upset_matrix[i, 4] = (fair_combo[i,]$ranked_baseline_simple <= rank_threshold)
+	upset_matrix[i, 5] = (fair_combo[i,]$ranked_baseline_smart <= rank_threshold)
+	upset_matrix[i, 6] = (fair_combo[i,]$ranked_smr_no_heidi <= rank_threshold)
+	upset_matrix[i, 7] = (fair_combo[i,]$ranked_smr_with_heidi <= rank_threshold)
+}
+
+upset_matrix[is.na(upset_matrix)] = 0
+upset_matrix = upset_matrix[rowSums(upset_matrix) > 0,]
+upset_matrix = data.frame(upset_matrix)
+#upset_matrix$Names = rownames(upset_matrix)
+upset_matrix_names = rownames(upset_matrix)
+
+upset(upset_matrix, 
+      sets = dimnames(upset_matrix)[[2]], 
+      order.by="freq", matrix.color="blue", point.size=5,
+      sets.bar.color=c("maroon","blue","orange", "green", "red", "violet", "cyan"))
+
+
+
+
+
 
 ##########################################
 # SVD to determine eigenmethods,
@@ -208,13 +259,25 @@ upset(upset_matrix,
 # for each site as the features
 ##########################################
 
+# NOTE: I'm not 100% sure yet that SVD is the best
+# way to do this since there are U and V matrices...
+# think about this
+
 rank_pairs = combo[c("ranked_finemap_c1", "ranked_finemap_c2", "ranked_coloc", "ranked_baseline_simple", "ranked_baseline_smart", "ranked_smr_no_heidi", "ranked_smr_with_heidi")]
 eigenmethods = svd(rank_pairs)
 em = eigenmethods$v
 rownames(em) = colnames(rank_pairs)
+
+fair_rank_pairs = fair_combo[c("ranked_finemap_c1", "ranked_finemap_c2", "ranked_coloc", "ranked_baseline_simple", "ranked_baseline_smart", "ranked_smr_no_heidi", "ranked_smr_with_heidi")]
+fair_eigenmethods = svd(fair_rank_pairs)
+fair_em = fair_eigenmethods$v
+rownames(fair_em) = colnames(fair_rank_pairs)
+
 
 ##########################################
 # Pairs plot for all methods
 ##########################################
 
 pairs(rank_pairs)
+pairs(fair_rank_pairs)
+
