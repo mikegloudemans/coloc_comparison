@@ -12,6 +12,8 @@ def main():
 
     config_template = '''
     {{
+            "rsid_index_file": "/users/mgloud/projects/index-dbsnp/data/hg19/common_all_20170710.vcf.gz",
+
             "out_dir_group": "smr-comparisons/{2}",
 
             "selection_basis": "snps_from_list",
@@ -69,8 +71,6 @@ def main():
 
     }}
     '''
-
-
 
     base_dir = sys.argv[1]
     num_tests = int(sys.argv[2])

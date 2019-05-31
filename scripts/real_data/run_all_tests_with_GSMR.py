@@ -9,7 +9,7 @@ import time
 
 def main():
     # Reset things fresh on each run, so we're not mixing results
-    subprocess.call("rm -rf /users/mgloud/projects/brain_gwas/output/some-locus-compare-tests-with-smr/*", shell=True)
+    subprocess.call("rm -rf /users/mgloud/projects/brain_gwas/output/some-locus-compare-tests-with-gsmr/*", shell=True)
 
     kept_data = []
     with open("/users/mgloud/projects/gwas/output/snps_to_test.txt") as f:
@@ -40,10 +40,10 @@ def main():
             continue
 
         temp = json.loads(template)
-        temp["snp_list_file"] = "/users/mgloud/projects/gwas/tmp/snp_list{0}.txt".format(i)
+        temp["snp_list_file"] = "/users/mgloud/projects/gwas/tmp/gsmr_real_snp_list{0}.txt".format(i)
 
         # Add locus to SNP list...but only once for each gene
-        with open("/users/mgloud/projects/gwas/tmp/snp_list{0}.txt".format(i), "w") as w:
+        with open("/users/mgloud/projects/gwas/tmp/gsmr_real_snp_list{0}.txt".format(i), "w") as w:
             w.write("{0}\t{1}\t{2}\n".format(test[0], test[1], test[7]))
                
         # Add corresponding gwas experiment to the list, if not already present
@@ -55,20 +55,20 @@ def main():
         temp["eqtl_experiments"][test[3]] = {"ref": "1kgenomes", "gwas_format": "effect_size"}
 
         # Write config file to the appropriate directory
-        with open("/users/mgloud/projects/gwas/tmp/lc_config{0}.config".format(i), "w") as w:
+        with open("/users/mgloud/projects/gwas/tmp/gsmr_real_config{0}.config".format(i), "w") as w:
             json.dump(temp, w)
 
         # Run the test
-        subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/tmp/lc_config{0}.config 1 &".format(i), shell=True)
+        subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/tmp/gsmr_real_config{0}.config 1 &".format(i), shell=True)
 
-        while int(subprocess.check_output('''ps -ef | grep "python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/tmp/lc_config" | wc -l''', shell=True)) > 20:
+        while int(subprocess.check_output('''ps -ef | grep "python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/tmp/gsmr_real_config" | wc -l''', shell=True)) > 20:
             time.sleep(5)
 
 template = '''
 {
         "rsid_index_file": "/users/mgloud/projects/index-dbsnp/data/hg19/common_all_20170710.vcf.gz",
 
-        "out_dir_group": "some-locus-compare-tests-with-smr",
+        "out_dir_group": "some-locus-compare-tests-with-gsmr",
 
         "gwas_experiments": 
 	{
@@ -89,7 +89,7 @@ template = '''
 
 	"methods": 
 	{
-                "smr": {}
+                "gsmr": {}
 	},
 
         "ref_genomes": 

@@ -12,8 +12,6 @@ def main():
 
     config_template = '''
     {{
-            "debug": "True",
-
             "out_dir_group": "gsmr-comparisons/{2}",
 
             "selection_basis": "snps_from_list",
