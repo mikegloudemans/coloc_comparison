@@ -62,6 +62,8 @@ compare_methods = function(answer_key, timestamp)
 	rtc_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/rtc-comparisons/", timestamp)
 	twas_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/twas-comparisons/", timestamp)
 	bl_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/baseline-comparisons/", timestamp)
+	smr_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/smr-comparisons/", timestamp)
+	gsmr_base_dir = paste0("/users/mgloud/projects/brain_gwas/output/gsmr-comparisons/", timestamp)
 
 	# 
 	# Part 1: Compare methods' performance on simulated data
@@ -87,6 +89,18 @@ compare_methods = function(answer_key, timestamp)
 	bl_results = get_baseline_results(bl_base_dir)
 	bl_problems = gsub("eqtl_sumstats", "", bl_results$eqtl_file)
 	bl_problems = as.numeric(gsub("_txt_gz", "", bl_problems))
+	smr_results = get_smr_results(smr_base_dir)
+	smr_problems = gsub("eqtl_sumstats", "", smr_results$eqtl_file)
+	smr_problems = as.numeric(gsub("_txt_gz", "", smr_problems))
+	gsmr_results = get_gsmr_results(gsmr_base_dir)
+	gsmr_problems = gsub("eqtl_sumstats", "", gsmr_results$eqtl_file)
+	gsmr_problems = as.numeric(gsub("_txt_gz", "", gsmr_problems))
+
+	# Apply HEIDI test for SMR
+	heidi_fails = smr_results$heidi_pval <= 0.05
+	heidi_fails[is.na(heidi_fails)] = FALSE
+	smr_results$heidi_adjusted_pval = smr_results$smr_neg_log_pval
+	smr_results$heidi_adjusted_pval[heidi_fails] = 0
 	
 	#twas_results = get_twas_results(twas_base_dir)
 	#twas_problems = gsub("eqtl_sumstats", "", twas_results$eqtl_file)
@@ -96,6 +110,8 @@ compare_methods = function(answer_key, timestamp)
 	problems = problems[problems %in% coloc_problems]
 	problems = problems[problems %in% bf_problems]
 	problems = problems[problems %in% bl_problems]
+	problems = problems[problems %in% smr_problems]
+	problems = problems[problems %in% gsmr_problems]
 	#problems = problems[problems %in% twas_problems]
 	problems = problems[problems %in% answer_key$test_case]
 
@@ -112,6 +128,9 @@ compare_methods = function(answer_key, timestamp)
 	bf_clpp = scale(bf_results$clpp[match(problem_set, bf_problems)])
 	bl = scale(bl_results$baseline_pval[match(problem_set, bl_problems)])
 	bl5 = scale(bl_results$baseline_pval5[match(problem_set, bl_problems)])
+	smr = scale(smr_results$smr_neg_log_pval[match(problem_set, smr_problems)])
+	smr_heidi = scale(smr_results$heidi_adjusted_pval[match(problem_set, smr_problems)])
+	gsmr = scale(gsmr_results$smr_neg_log_pval[match(problem_set, gsmr_problems)])
 	#twas_p = scale(twas_results$twas_log_pval[match(problem_set, twas_problems)])
 
 	plot(roc(answers, as.numeric(clpp)), print.auc = TRUE, col = "black", print.auc.x = 0.2, print.auc.y = 0.32, main = "Colocalization detection performance")
@@ -121,24 +140,24 @@ compare_methods = function(answer_key, timestamp)
 	plot(roc(answers, as.numeric(bf_clpp)), print.auc = TRUE, col = "gray", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.16)
 	plot(roc(answers, as.numeric(bl)), print.auc = TRUE, col = "turquoise3", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.04)
 	plot(roc(answers, as.numeric(bl5)), print.auc = TRUE, col = "yellowgreen", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.36)
+	plot(roc(answers, as.numeric(smr)), print.auc = TRUE, col = "darkgoldenrod4", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.40)
+	plot(roc(answers, as.numeric(smr_heidi)), print.auc = TRUE, col = "deeppink2", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.44)
+	plot(roc(answers, as.numeric(gsmr)), print.auc = TRUE, col = "forestgreen", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.48)
 	#plot(roc(answers, as.numeric(twas_p)), print.auc = TRUE, col = "orange", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.12)
 
-	# TODO: Plot a comparison of all baseline models with just COLOC and FINEMAP
-
 	# With smart baseline included
-	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + bl5 #+ twas_p
+	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + bl5 + smr + gsmr #+ twas_p
 	# Without baseline included
-	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp #+ twas_p
+	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + smr + gsmr#+ twas_p
 	
 	ensemble = ensemble / max(ensemble)
 	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.08 )
-	legend(0.9, 0.3, legend=c("FINEMAP-CLPP", "FINEMAP-CLPP_mod", "COLOC", "RTC", "CAVIARBF", "TWAS", "ensemble (no baseline)", "baseline", "smart-baseline"),
-	              col=c("black", "red", "blue", "green", "gray", "orange", "purple", "turquoise3", "yellowgreen"), bg="white", lty=1, cex=0.8, lwd=4)
+	legend(0.8, 0.4, legend=c("FINEMAP-CLPP", "FINEMAP-CLPP_mod", "COLOC", "RTC", "CAVIARBF", "TWAS", "ensemble (no baseline)", "baseline", "smart-baseline", "SMR", "SMR-HEIDI", "GSMR"),
+	              col=c("black", "red", "blue", "green", "gray", "orange", "purple", "turquoise3", "yellowgreen", "darkgoldenrod4", "deeppink2", "forestgreen"), bg="white", lty=1, cex=0.8, lwd=4)
 	# Naive ensemble performance is comparable with the best methods
 
 	readline("Press enter:")
 
-	# Something about this doesn't seem quite right	
 	plot(pr.curve(clpp[which(answers==1)], clpp[which(answers==0)], curve=TRUE), color="black")
 	plot(pr.curve(clpp_mod[which(answers==1)], clpp_mod[which(answers==0)], curve=TRUE), add=TRUE, color="red")
 	plot(pr.curve(h4pp[which(answers==1)], h4pp[which(answers==0)], curve=TRUE), add=TRUE, color="blue")
@@ -148,6 +167,9 @@ compare_methods = function(answer_key, timestamp)
 	plot(pr.curve(bl3[which(answers==1)], bl3[which(answers==0)], curve=TRUE), add=TRUE, color="yellowgreen")
 	#plot(pr.curve(twas_p[which(answers==1)], twas_p[which(answers==0)], curve=TRUE), add=TRUE, color="orange")
 	plot(pr.curve(ensemble[which(answers==1)], ensemble[which(answers==0)], curve=TRUE), add=TRUE, color="purple")
+	plot(pr.curve(smr[which(answers==1)], ensemble[which(answers==0)], curve=TRUE), add=TRUE, color="darkgoldenrod4")
+	plot(pr.curve(smr_heidi[which(answers==1)], ensemble[which(answers==0)], curve=TRUE), add=TRUE, color="deeppink2")
+	plot(pr.curve(gsmr[which(answers==1)], ensemble[which(answers==0)], curve=TRUE), add=TRUE, color="forestgreen")
 
 	readline("Press enter:")
 
@@ -421,6 +443,36 @@ get_caviarbf_results = function(base_dir)
 	return(all_results)
 }
 
+get_smr_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("_smr", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+}
+
+get_gsmr_results = function(base_dir)
+{
+	results_dirs = dir(base_dir)
+	data = list()
+	for (rd in results_dirs)
+	{
+		subdir = dir(paste(base_dir, rd, sep="/"))
+		results_file = subdir[grepl("gsmr", subdir)]
+		data[[rd]] = read.table(paste(base_dir, rd, results_file, sep="/"), header=TRUE)
+	}
+
+	all_results = do.call(rbind, data)
+	return(all_results)
+}
+
 get_twas_results = function(base_dir)
 {
 	results_dirs = dir(base_dir)
@@ -450,8 +502,6 @@ get_baseline_results = function(base_dir)
 	all_results = do.call(rbind, data)
 	return(all_results)
 }
-
-
 
 # This function is never called and is currently used for nothing
 # LOL

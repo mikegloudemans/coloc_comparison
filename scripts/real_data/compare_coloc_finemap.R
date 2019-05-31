@@ -8,6 +8,7 @@ finemap = read_delim("/users/mgloud/projects/coloc_comparisons/output/coloc_vs_f
 finemap2 = read_delim("/users/mgloud/projects/coloc_comparisons/output/coloc_vs_finemap/finemap_c2_results.txt", delim="\t")
 baseline = read_delim("/users/mgloud/projects/coloc_comparisons/output/baseline/baseline_results.txt", delim="\t")
 smr = read_delim("/users/mgloud/projects/coloc_comparisons/output/smr/smr_results.txt", delim="\t")
+gsmr = read_delim("/users/mgloud/projects/coloc_comparisons/output/gsmr/gsmr_results.txt", delim="\t")
 
 names(baseline)[6] = "base_gwas_file"
 
@@ -21,12 +22,15 @@ idx = which(!(names(coloc) %in% c("ref_snp", "eqtl_file", "gwas_trait", "feature
 names(coloc)[idx] = paste0(names(coloc[idx]), "_coloc")
 idx = which(!(names(smr) %in% c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file")))
 names(smr)[idx] = paste0(names(smr[idx]), "_smr")
+idx = which(!(names(gsmr) %in% c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file")))
+names(smr)[idx] = paste0(names(smr[idx]), "_gsmr")
 
 # Join all results for the same locus into a single row with scores for each method
 combo = full_join(baseline, coloc, by=c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file"))
 combo = full_join(combo, finemap2, by=c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file"))
 combo = full_join(combo, finemap, by=c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file"))
 combo = full_join(combo, smr, by=c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file"))
+combo = full_join(combo, gsmr, by=c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file"))
 
 
 #######################################################
@@ -165,9 +169,9 @@ combo$smr_heidi_adjusted[combo$heidi_pval_smr < 0.05] = 0
 combo$test_names = paste(combo$ref_snp, combo$eqtl_file, combo$gwas_trait, combo$base_gwas_file, combo$feature, sep="_")
 stopifnot(length(combo$test_names) == length(unique(combo$test_names)))	# Each test should have a unique ID
 
-upset_matrix = array(-1, dim=c(dim(combo)[1],7))
+upset_matrix = array(-1, dim=c(dim(combo)[1],8))
 dimnames(upset_matrix)[[1]] = combo$test_names
-dimnames(upset_matrix)[[2]] = c("FINEMAP_c1", "FINEMAP_c2", "COLOC", "Baseline_simple", "Baseline_smart", "SMR_no_HEIDI", "SMR_with_HEIDI")
+dimnames(upset_matrix)[[2]] = c("FINEMAP_c1", "FINEMAP_c2", "COLOC", "Baseline_simple", "Baseline_smart", "SMR_no_HEIDI", "SMR_with_HEIDI", "GSMR")
 
 combo$ranked_finemap_c1 = rank(-combo$clpp_finemap_c1)
 combo$ranked_finemap_c2 = rank(-combo$clpp_finemap_c2)
@@ -176,6 +180,7 @@ combo$ranked_baseline_simple = rank(-combo$baseline_pval_baseline)
 combo$ranked_baseline_smart = rank(-combo$baseline_pval5_baseline)
 combo$ranked_smr_no_heidi = rank(-combo$smr_neg_log_pval_smr)
 combo$ranked_smr_with_heidi = rank(-combo$smr_heidi_adjusted)
+combo$ranked_gsmr_no_heidi = rank(-combo$smr_neg_log_pval_gsmr)
 
 rank_threshold = 1000
 for (i in 1:dim(upset_matrix)[1])
@@ -187,6 +192,7 @@ for (i in 1:dim(upset_matrix)[1])
 	upset_matrix[i, 5] = (combo[i,]$ranked_baseline_smart <= rank_threshold)
 	upset_matrix[i, 6] = (combo[i,]$ranked_smr_no_heidi <= rank_threshold)
 	upset_matrix[i, 7] = (combo[i,]$ranked_smr_with_heidi <= rank_threshold)
+	upset_matrix[i, 8] = (combo[i,]$ranked_gsmr_no_heidi <= rank_threshold)
 }
 
 upset_matrix[is.na(upset_matrix)] = 0
@@ -198,7 +204,7 @@ upset_matrix_names = rownames(upset_matrix)
 upset(upset_matrix, 
       sets = dimnames(upset_matrix)[[2]], 
       order.by="freq", matrix.color="blue", point.size=5,
-      sets.bar.color=c("maroon","blue","orange", "green", "red", "violet", "cyan"))
+      sets.bar.color=c("maroon","blue","orange", "green", "red", "violet", "cyan", "forestgreen"))
 
 # The above plot may be misleading if we count COLOC and SMR results on methods for which these tests weren't even run
 # due to insufficient data. Try subsetting down to the common denominator here.
@@ -210,12 +216,13 @@ fair_studies = fair_studies[fair_studies %in% unique(combo[!is.na(combo$clpp_fin
 fair_studies = fair_studies[fair_studies %in% unique(combo[!is.na(combo$clpp_finemap_c2),]$base_gwas_file)]
 fair_studies = fair_studies[fair_studies %in% unique(combo[!is.na(combo$baseline_pval_baseline),]$base_gwas_file)]
 fair_studies = fair_studies[fair_studies %in% unique(combo[!is.na(combo$baseline_pval5_baseline),]$base_gwas_file)]
+fair_studies = fair_studies[fair_studies %in% unique(combo[!is.na(combo$smr_neg_log_pval_gsmr),]$base_gwas_file)]
 
 fair_combo = combo[combo$base_gwas_file %in% fair_studies,]
 
-upset_matrix = array(-1, dim=c(dim(fair_combo)[1],7))
+upset_matrix = array(-1, dim=c(dim(fair_combo)[1],8))
 dimnames(upset_matrix)[[1]] = fair_combo$test_names
-dimnames(upset_matrix)[[2]] = c("FINEMAP_c1", "FINEMAP_c2", "COLOC", "Baseline_simple", "Baseline_smart", "SMR_no_HEIDI", "SMR_with_HEIDI")
+dimnames(upset_matrix)[[2]] = c("FINEMAP_c1", "FINEMAP_c2", "COLOC", "Baseline_simple", "Baseline_smart", "SMR_no_HEIDI", "SMR_with_HEIDI", "GSMR")
 
 fair_combo$ranked_finemap_c1 = rank(-fair_combo$clpp_finemap_c1)
 fair_combo$ranked_finemap_c2 = rank(-fair_combo$clpp_finemap_c2)
@@ -224,6 +231,7 @@ fair_combo$ranked_baseline_simple = rank(-fair_combo$baseline_pval_baseline)
 fair_combo$ranked_baseline_smart = rank(-fair_combo$baseline_pval5_baseline)
 fair_combo$ranked_smr_no_heidi = rank(-fair_combo$smr_neg_log_pval_smr)
 fair_combo$ranked_smr_with_heidi = rank(-fair_combo$smr_heidi_adjusted)
+fair_combo$ranked_gsmr_no_heidi = rank(-fair_combo$smr_neg_log_pval_gsmr)
 
 rank_threshold = 1000
 for (i in 1:dim(upset_matrix)[1])
@@ -235,6 +243,8 @@ for (i in 1:dim(upset_matrix)[1])
 	upset_matrix[i, 5] = (fair_combo[i,]$ranked_baseline_smart <= rank_threshold)
 	upset_matrix[i, 6] = (fair_combo[i,]$ranked_smr_no_heidi <= rank_threshold)
 	upset_matrix[i, 7] = (fair_combo[i,]$ranked_smr_with_heidi <= rank_threshold)
+	upset_matrix[i, 7] = (fair_combo[i,]$ranked_gsmr <= rank_threshold)
+	upset_matrix[i, 8] = (fair_combo[i,]$ranked_gsmr_no_heidi <= rank_threshold)
 }
 
 upset_matrix[is.na(upset_matrix)] = 0
@@ -246,7 +256,7 @@ upset_matrix_names = rownames(upset_matrix)
 upset(upset_matrix, 
       sets = dimnames(upset_matrix)[[2]], 
       order.by="freq", matrix.color="blue", point.size=5,
-      sets.bar.color=c("maroon","blue","orange", "green", "red", "violet", "cyan"))
+      sets.bar.color=c("maroon","blue","orange", "green", "red", "violet", "cyan", "forestgreen"))
 
 
 
@@ -263,7 +273,7 @@ upset(upset_matrix,
 # way to do this since there are U and V matrices...
 # think about this
 
-rank_pairs = combo[c("ranked_finemap_c1", "ranked_finemap_c2", "ranked_coloc", "ranked_baseline_simple", "ranked_baseline_smart", "ranked_smr_no_heidi", "ranked_smr_with_heidi")]
+rank_pairs = combo[c("ranked_finemap_c1", "ranked_finemap_c2", "ranked_coloc", "ranked_baseline_simple", "ranked_baseline_smart", "ranked_smr_no_heidi", "ranked_smr_with_heidi", "ranked_gsmr_no_heidi")]
 eigenmethods = svd(rank_pairs)
 em = eigenmethods$v
 rownames(em) = colnames(rank_pairs)
