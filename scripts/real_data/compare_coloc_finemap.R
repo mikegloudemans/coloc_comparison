@@ -23,7 +23,7 @@ names(coloc)[idx] = paste0(names(coloc[idx]), "_coloc")
 idx = which(!(names(smr) %in% c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file")))
 names(smr)[idx] = paste0(names(smr[idx]), "_smr")
 idx = which(!(names(gsmr) %in% c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file")))
-names(smr)[idx] = paste0(names(smr[idx]), "_gsmr")
+names(gsmr)[idx] = paste0(names(gsmr[idx]), "_gsmr")
 
 # Join all results for the same locus into a single row with scores for each method
 combo = full_join(baseline, coloc, by=c("ref_snp", "eqtl_file", "gwas_trait", "feature", "base_gwas_file"))
@@ -243,7 +243,6 @@ for (i in 1:dim(upset_matrix)[1])
 	upset_matrix[i, 5] = (fair_combo[i,]$ranked_baseline_smart <= rank_threshold)
 	upset_matrix[i, 6] = (fair_combo[i,]$ranked_smr_no_heidi <= rank_threshold)
 	upset_matrix[i, 7] = (fair_combo[i,]$ranked_smr_with_heidi <= rank_threshold)
-	upset_matrix[i, 7] = (fair_combo[i,]$ranked_gsmr <= rank_threshold)
 	upset_matrix[i, 8] = (fair_combo[i,]$ranked_gsmr_no_heidi <= rank_threshold)
 }
 
