@@ -159,6 +159,7 @@ sapply(gerp_window_list, function(x) {sum(x > 0.5) / length(x)})
 
 # Compare distributions
 # (maybe convert to box/violin plot eventually)
+eigen_list = lapply(eigen_list, function(x){x[is.finite(x)]})
 plot(density(eigen_list[[1]]))
 lines(density(eigen_list[[2]]), col="red")
 lines(density(eigen_list[[3]]), col="blue")
@@ -172,6 +173,7 @@ lines(density(eigen_list[[9]]), col="green")
 sapply(eigen_list, mean)
 sapply(eigen_list, function(x) {sum(x > 0.5) / length(x)})
 
+eigen_window_list = lapply(eigen_window_list, function(x){x[is.finite(x)]})
 plot(density(eigen_window_list[[1]], na.rm=TRUE))
 lines(density(eigen_window_list[[2]], na.rm=TRUE), col="red")
 lines(density(eigen_window_list[[3]], na.rm=TRUE), col="blue")
@@ -215,10 +217,6 @@ lines(density(eigenpc_window_list[[9]]), col="green")
 
 sapply(eigenpc_window_list, mean)
 sapply(eigenpc_window_list, function(x) {sum(x > 0.5) / length(x)})
-
-
-
-
 
 # Compare distributions
 

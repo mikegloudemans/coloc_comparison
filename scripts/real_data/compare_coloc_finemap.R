@@ -126,7 +126,6 @@ disagreements = disagreements[rev(order(abs(disagreements$clpp_finemap_c2_rank -
 points(disagreements$clpp_finemap_c2_rank, disagreements$baseline_rank, col="red", pch=18)
 
 
-
 ############################################
 # Compare COLOC w/ baseline
 ############################################
@@ -257,10 +256,83 @@ upset(upset_matrix,
       order.by="freq", matrix.color="blue", point.size=5,
       sets.bar.color=c("maroon","blue","orange", "green", "red", "violet", "cyan", "forestgreen"))
 
+# Top 10% of hits...
+upset_matrix = array(-1, dim=c(dim(fair_combo)[1],8))
+dimnames(upset_matrix)[[1]] = fair_combo$test_names
+dimnames(upset_matrix)[[2]] = c("FINEMAP_c1", "FINEMAP_c2", "COLOC", "Baseline_simple", "Baseline_smart", "SMR_no_HEIDI", "SMR_with_HEIDI", "GSMR")
+
+rank_threshold = floor(dim(fair_combo)[1] / 10)
+for (i in 1:dim(upset_matrix)[1])
+{
+	upset_matrix[i, 1] = (fair_combo[i,]$ranked_finemap_c1 <= rank_threshold)
+	upset_matrix[i, 2] = (fair_combo[i,]$ranked_finemap_c2 <= rank_threshold)
+	upset_matrix[i, 3] = (fair_combo[i,]$ranked_coloc <= rank_threshold)
+	upset_matrix[i, 4] = (fair_combo[i,]$ranked_baseline_simple <= rank_threshold)
+	upset_matrix[i, 5] = (fair_combo[i,]$ranked_baseline_smart <= rank_threshold)
+	upset_matrix[i, 6] = (fair_combo[i,]$ranked_smr_no_heidi <= rank_threshold)
+	upset_matrix[i, 7] = (fair_combo[i,]$ranked_smr_with_heidi <= rank_threshold)
+	upset_matrix[i, 8] = (fair_combo[i,]$ranked_gsmr_no_heidi <= rank_threshold)
+}
+
+upset_matrix[is.na(upset_matrix)] = 0
+upset_matrix = upset_matrix[rowSums(upset_matrix) > 0,]
+upset_matrix = data.frame(upset_matrix)
+#upset_matrix$Names = rownames(upset_matrix)
+upset_matrix_names = rownames(upset_matrix)
+
+upset(upset_matrix, 
+      sets = dimnames(upset_matrix)[[2]], 
+      order.by="freq", matrix.color="blue", point.size=5,
+      sets.bar.color=c("maroon","blue","orange", "green", "red", "violet", "cyan", "forestgreen"))
+
+# Test overlaps between top 10% of individual sets
+set_overlaps = sapply(1:dim(upset_matrix)[2], function(i)
+       {
+		return(sapply(1:dim(upset_matrix)[2], function(j)
+		       {
+				return(sum(rowSums(upset_matrix[,c(i,j)]) == 2) / sum(upset_matrix[,i]))
+		       }))
+       })
+rownames(set_overlaps) = c("FINEMAP_c1", "FINEMAP_c2", "COLOC", "Baseline_simple", "Baseline_smart", "SMR_no_HEIDI", "SMR_with_HEIDI", "GSMR")
+colnames(set_overlaps) = rownames(set_overlaps)
+
+median(set_overlaps)
+
+marginal_increase = sapply(1:dim(upset_matrix)[2], function(i)
+       {
+		return(sapply(1:dim(upset_matrix)[2], function(j)
+		       {
+				return((sum(rowSums(upset_matrix[,c(i,j)]) > 0) - sum(upset_matrix[,i])) / sum(upset_matrix[,i]))
+		       }))
+       })
+diag(marginal_increase) = NA
+median(marginal_increase, na.rm=TRUE)
+
+# Get OMIM data and check for enrichment
+gene_map = read.table("/users/mgloud/projects/coloc_comparisons/data/omim/OMIM/genemap2.txt", sep="\t", skip = 3, comment.char="!", header=TRUE, fill=TRUE, stringsAsFactors=FALSE)
+gene_map = gene_map[gene_map$Ensembl.Gene.ID != "",]
+gene_disease = gene_map[gene_map$Phenotypes != "",]
+omim_genes = unique(gene_disease$Ensembl.Gene.ID)
+
+ens_genes = sapply(rownames(upset_matrix), function(x){s=strsplit(x, "_")[[1]]; return(strsplit(s[length(s)], "\\.")[[1]][1])})
+omim_overlap = sapply(1:dim(upset_matrix)[2], function(i)
+		      {
+			      found_genes = unique(as.character(n[upset_matrix[,i] == 1]))
+			      return(sum(found_genes %in% omim_genes) / length(found_genes))
+		      })
+names(omim_overlap) = rownames(set_overlaps)
+
+ensemble_vote = rank(-rowSums(upset_matrix[,c(1,3,5,7)])) <= 300
+sum(ensemble_vote)
+ensemble_genes = unique(ens_genes[ensemble_vote])
+print((sum(ensemble_genes %in% omim_genes) / length(ensemble_genes)))
+
+all_tested = unique(sapply(combo$feature, function(x) {strsplit(x, "\\.")[[1]][1]}))
+print(sum(all_tested %in% omim_genes) / length(all_tested))
 
 
-
-
+# TODO: Get IMPC data too?
+#impc_overlap
 
 ##########################################
 # SVD to determine eigenmethods,

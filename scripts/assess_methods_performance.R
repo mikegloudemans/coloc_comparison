@@ -145,6 +145,30 @@ compare_methods = function(answer_key, timestamp)
 	plot(roc(answers, as.numeric(gsmr)), print.auc = TRUE, col = "forestgreen", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.48)
 	#plot(roc(answers, as.numeric(twas_p)), print.auc = TRUE, col = "orange", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.12)
 
+	# Make colocalization matrix for Jeremy to mess around with for ensemble approach
+	colocalization_matrix = data.frame(list(coloc_h4=coloc_results$clpp_h4[match(problem_set, coloc_problems)],
+						coloc_h4_rank=rank(-coloc_results$clpp_h4[match(problem_set, coloc_problems)]),
+						rtc_score=rtc_results$rtc[match(problem_set, rtc_problems)],
+						rtc_score_rank=rank(-rtc_results$rtc[match(problem_set, rtc_problems)]),
+						finemap_clpp=finemap_results$clpp[match(problem_set, finemap_problems)],
+						finemap_clpp_rank=rank(-finemap_results$clpp[match(problem_set, finemap_problems)]),
+						finemap_clppmod=finemap_results$clpp_mod[match(problem_set, finemap_problems)],
+						finemap_clppmod_rank=rank(-finemap_results$clpp_mod[match(problem_set, finemap_problems)]),
+						caviarbf_clpp=bf_results$clpp[match(problem_set, bf_problems)],
+						caviarbf_clpp_rank=rank(-bf_results$clpp[match(problem_set, bf_problems)]),
+						baseline_neglogpvalue=bl_results$baseline_pval[match(problem_set, bl_problems)],
+						baseline_neglogpvalue_rank=rank(-bl_results$baseline_pval[match(problem_set, bl_problems)]),
+						smartbaseline_neglogpvalue=bl_results$baseline_pval5[match(problem_set, bl_problems)],
+						smartbaseline_neglogpvalue_rank=rank(-bl_results$baseline_pval5[match(problem_set, bl_problems)]),
+						smr_neglogpvalue=smr_results$smr_neg_log_pval[match(problem_set, smr_problems)],
+						smr_neglogpvalue_rank=rank(-smr_results$smr_neg_log_pval[match(problem_set, smr_problems)]),
+						smrheidiadjusted_neglogpvalue=smr_results$heidi_adjusted_pval[match(problem_set, smr_problems)],
+						smrheidiadjusted_neglogpvalue_rank=rank(-smr_results$heidi_adjusted_pval[match(problem_set, smr_problems)]),
+						gsmr_neglogpvalue=gsmr_results$smr_neg_log_pval[match(problem_set, gsmr_problems)],
+						gsmr_neglogpvalue_rank=rank(-gsmr_results$smr_neg_log_pval[match(problem_set, gsmr_problems)]),
+						colocalization_status=answers))
+	write.table(colocalization_matrix, "/users/mgloud/projects/coloc_comparisons/jeremy/colocalization_matrix.tsv", quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")	
+
 	# With smart baseline included
 	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + bl5 + smr + gsmr #+ twas_p
 	# Without baseline included
@@ -164,7 +188,7 @@ compare_methods = function(answer_key, timestamp)
 	plot(pr.curve(rtc[which(answers==1)], rtc[which(answers==0)], curve=TRUE), add=TRUE, color="green")
 	plot(pr.curve(bf_clpp[which(answers==1)], bf_clpp[which(answers==0)], curve=TRUE), add=TRUE, color="gray")
 	plot(pr.curve(bl[which(answers==1)], bl[which(answers==0)], curve=TRUE), add=TRUE, color="turquoise3")
-	plot(pr.curve(bl3[which(answers==1)], bl3[which(answers==0)], curve=TRUE), add=TRUE, color="yellowgreen")
+	plot(pr.curve(bl5[which(answers==1)], bl5[which(answers==0)], curve=TRUE), add=TRUE, color="yellowgreen")
 	#plot(pr.curve(twas_p[which(answers==1)], twas_p[which(answers==0)], curve=TRUE), add=TRUE, color="orange")
 	plot(pr.curve(ensemble[which(answers==1)], ensemble[which(answers==0)], curve=TRUE), add=TRUE, color="purple")
 	plot(pr.curve(smr[which(answers==1)], ensemble[which(answers==0)], curve=TRUE), add=TRUE, color="darkgoldenrod4")
