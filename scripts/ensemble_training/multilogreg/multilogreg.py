@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import csv
 from sklearn.linear_model import LogisticRegression
 from sklearn import datasets
 from sklearn.metrics import accuracy_score
@@ -36,7 +37,10 @@ print(predY)
 print(accuracy_score(validY, predY))
 # worth saving the predictions in a file?
 
-weights = logreg.coef_ # returns a matrix of weights (coefficients)
+weights = np.ravel(logreg.coef_) # returns a matrix of weights (coefficients)
 print(weights)
 #save weights in a file
+with open('/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/multilogreg/weights.csv', mode='w') as weights_file:
+    writer = csv.writer(weights_file, delimiter = ',', quotechar   = '"', quoting = csv.QUOTE_NONE, escapechar = ' ')
+    writer.writerow(weights)
 
