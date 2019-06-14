@@ -21,7 +21,7 @@ trainY = np.ravel(trainY)
 
 #create and fit multiclass logistic regression model
 logreg = LogisticRegression(multi_class='ovr') #specify 'one versus rest' option 
-logreg.fit(trainX, trainY)
+logreg = logreg.fit(trainX, trainY)
 
 #predict using cross-validation dataset
 #load validation data and KEY
