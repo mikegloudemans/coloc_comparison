@@ -35,7 +35,14 @@ validY = df.to_numpy()  # access the numpy array containing values
 predY = logreg.predict(validX)
 print(predY)
 print(accuracy_score(validY, predY))
+predProbY = logreg.predict_proba(validX)
+print(predProbY)
 # worth saving the predictions in a file?
+with open('/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/multilogreg/prediction_probabilities.csv', 'w') as probability_file:
+    writer = csv.writer(probability_file, delimiter = ',', quotechar   = '"', quoting = csv.QUOTE_NONE, escapechar = ' ')
+    for row in predProbY:
+        writer.writerow(row)
+
 
 weights = np.ravel(logreg.coef_) # returns a matrix of weights (coefficients)
 print(weights)
