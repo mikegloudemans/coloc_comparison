@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import csv
 from sklearn.metrics import accuracy_score
+from sklearn.tree.export import export_text
 
 training_save_path = "/users/j29tien/colocalization_ML/training_set.tsv"
 trainingKEY_save_path = "/users/j29tien/colocalization_ML/training_set_KEY.tsv"
@@ -42,4 +43,11 @@ with open('/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_tr
         writer.writerow(row)
 
 #rather than save "weights", save tree in some sort of format
+df = pd.read_csv("/users/j29tien/colocalization_ML/feature_names.tsv", sep="\t")
+f_names = df.columns.values
+dtree_exported = export_text(dtree, feature_names=f_names)
+print(dtree_exported)
+outfile = open(r"/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/decistree/tree_export.txt","w")
+outfile.write(dtree_exported)
+outfile.close()
 

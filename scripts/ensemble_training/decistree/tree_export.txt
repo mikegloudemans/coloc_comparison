@@ -1,0 +1,361 @@
+|--- rtc_score <= 416.50
+|   |--- smr_neglogpvalue <= 312.50
+|   |   |--- finemap_clpp_rank <= 0.01
+|   |   |   |--- caviarbf_clpp <= 146.50
+|   |   |   |   |--- gsmr_neglogpvalue_rank <= 1.10
+|   |   |   |   |   |--- class: False
+|   |   |   |   |--- gsmr_neglogpvalue_rank >  1.10
+|   |   |   |   |   |--- smrheidiadjusted_neglogpvalue <= 106.50
+|   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |--- smrheidiadjusted_neglogpvalue >  106.50
+|   |   |   |   |   |   |--- class: False
+|   |   |   |--- caviarbf_clpp >  146.50
+|   |   |   |   |--- finemap_clppmod <= 881.00
+|   |   |   |   |   |--- coloc_h4_rank <= 0.59
+|   |   |   |   |   |   |--- colocalization_status <= 1846.50
+|   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- colocalization_status >  1846.50
+|   |   |   |   |   |   |   |--- colocalization_status <= 2135.00
+|   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |--- colocalization_status >  2135.00
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |--- coloc_h4_rank >  0.59
+|   |   |   |   |   |   |--- caviarbf_clpp <= 216.50
+|   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- caviarbf_clpp >  216.50
+|   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |--- finemap_clppmod >  881.00
+|   |   |   |   |   |--- baseline_neglogpvalue_rank <= 2.49
+|   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |--- baseline_neglogpvalue_rank >  2.49
+|   |   |   |   |   |   |--- class: False
+|   |   |--- finemap_clpp_rank >  0.01
+|   |   |   |--- class: True
+|   |--- smr_neglogpvalue >  312.50
+|   |   |--- finemap_clpp_rank <= 0.00
+|   |   |   |--- coloc_h4_rank <= 0.12
+|   |   |   |   |--- class: True
+|   |   |   |--- coloc_h4_rank >  0.12
+|   |   |   |   |--- smrheidiadjusted_neglogpvalue <= 1751.00
+|   |   |   |   |   |--- smr_neglogpvalue <= 347.00
+|   |   |   |   |   |   |--- finemap_clppmod <= 1213.00
+|   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |--- finemap_clppmod >  1213.00
+|   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |--- smr_neglogpvalue >  347.00
+|   |   |   |   |   |   |--- caviarbf_clpp <= 413.00
+|   |   |   |   |   |   |   |--- baseline_neglogpvalue <= 521.50
+|   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |--- baseline_neglogpvalue >  521.50
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- caviarbf_clpp >  413.00
+|   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |--- smrheidiadjusted_neglogpvalue >  1751.00
+|   |   |   |   |   |--- smrheidiadjusted_neglogpvalue <= 3316.00
+|   |   |   |   |   |   |--- finemap_clpp_rank <= 0.00
+|   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- finemap_clpp_rank >  0.00
+|   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |--- smrheidiadjusted_neglogpvalue >  3316.00
+|   |   |   |   |   |   |--- class: False
+|   |   |--- finemap_clpp_rank >  0.00
+|   |   |   |--- caviarbf_clpp_rank <= 0.00
+|   |   |   |   |--- class: False
+|   |   |   |--- caviarbf_clpp_rank >  0.00
+|   |   |   |   |--- caviarbf_clpp_rank <= 0.00
+|   |   |   |   |   |--- baseline_neglogpvalue_rank <= 1.69
+|   |   |   |   |   |   |--- smartbaseline_neglogpvalue_rank <= 2.89
+|   |   |   |   |   |   |   |--- smr_neglogpvalue_rank <= 1.94
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |--- smr_neglogpvalue_rank >  1.94
+|   |   |   |   |   |   |   |   |--- finemap_clppmod_rank <= 0.13
+|   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |--- finemap_clppmod_rank >  0.13
+|   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |--- smartbaseline_neglogpvalue_rank >  2.89
+|   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |--- baseline_neglogpvalue_rank >  1.69
+|   |   |   |   |   |   |--- baseline_neglogpvalue <= 516.50
+|   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- baseline_neglogpvalue >  516.50
+|   |   |   |   |   |   |   |--- rtc_score <= 276.00
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |--- rtc_score >  276.00
+|   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |--- caviarbf_clpp_rank >  0.00
+|   |   |   |   |   |--- baseline_neglogpvalue <= 226.50
+|   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |--- baseline_neglogpvalue >  226.50
+|   |   |   |   |   |   |--- class: False
+|--- rtc_score >  416.50
+|   |--- rtc_score_rank <= 0.94
+|   |   |--- coloc_h4_rank <= 0.05
+|   |   |   |--- finemap_clpp_rank <= 0.00
+|   |   |   |   |--- coloc_h4_rank <= 0.02
+|   |   |   |   |   |--- smartbaseline_neglogpvalue <= 3914.00
+|   |   |   |   |   |   |--- finemap_clpp_rank <= 0.00
+|   |   |   |   |   |   |   |--- coloc_h4_rank <= 0.02
+|   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue_rank <= 0.87
+|   |   |   |   |   |   |   |   |   |--- caviarbf_clpp <= 1726.00
+|   |   |   |   |   |   |   |   |   |   |--- caviarbf_clpp <= 1719.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |   |--- caviarbf_clpp >  1719.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |--- caviarbf_clpp >  1726.00
+|   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue_rank >  0.87
+|   |   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue <= 898.00
+|   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue >  898.00
+|   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |--- coloc_h4_rank >  0.02
+|   |   |   |   |   |   |   |   |--- coloc_h4_rank <= 0.02
+|   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |--- coloc_h4_rank >  0.02
+|   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank <= 0.01
+|   |   |   |   |   |   |   |   |   |   |--- caviarbf_clpp <= 1869.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |   |--- caviarbf_clpp >  1869.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank >  0.01
+|   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |--- finemap_clpp_rank >  0.00
+|   |   |   |   |   |   |   |--- finemap_clppmod <= 2692.75
+|   |   |   |   |   |   |   |   |--- finemap_clpp_rank <= 0.00
+|   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank <= 0.00
+|   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank >  0.00
+|   |   |   |   |   |   |   |   |   |   |--- finemap_clppmod <= 2654.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |   |--- finemap_clppmod >  2654.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |--- finemap_clpp_rank >  0.00
+|   |   |   |   |   |   |   |   |   |--- smartbaseline_neglogpvalue_rank <= 2.01
+|   |   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank <= 0.02
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 8
+|   |   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank >  0.02
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 15
+|   |   |   |   |   |   |   |   |   |--- smartbaseline_neglogpvalue_rank >  2.01
+|   |   |   |   |   |   |   |   |   |   |--- smartbaseline_neglogpvalue_rank <= 2.10
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |   |--- smartbaseline_neglogpvalue_rank >  2.10
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 5
+|   |   |   |   |   |   |   |--- finemap_clppmod >  2692.75
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |--- smartbaseline_neglogpvalue >  3914.00
+|   |   |   |   |   |   |--- finemap_clpp <= 657.50
+|   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- finemap_clpp >  657.50
+|   |   |   |   |   |   |   |--- finemap_clppmod <= 682.00
+|   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue <= 2125.00
+|   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue >  2125.00
+|   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |--- finemap_clppmod >  682.00
+|   |   |   |   |   |   |   |   |--- caviarbf_clpp_rank <= 0.00
+|   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |--- caviarbf_clpp_rank >  0.00
+|   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue <= 1443.50
+|   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue >  1443.50
+|   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |--- coloc_h4_rank >  0.02
+|   |   |   |   |   |--- rtc_score <= 1743.50
+|   |   |   |   |   |   |--- rtc_score_rank <= 0.68
+|   |   |   |   |   |   |   |--- smr_neglogpvalue_rank <= 0.00
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |--- smr_neglogpvalue_rank >  0.00
+|   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank <= 0.05
+|   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank <= 0.04
+|   |   |   |   |   |   |   |   |   |   |--- baseline_neglogpvalue <= 1079.50
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 2
+|   |   |   |   |   |   |   |   |   |   |--- baseline_neglogpvalue >  1079.50
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 5
+|   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank >  0.04
+|   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank >  0.05
+|   |   |   |   |   |   |   |   |   |--- smartbaseline_neglogpvalue_rank <= 0.86
+|   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |--- smartbaseline_neglogpvalue_rank >  0.86
+|   |   |   |   |   |   |   |   |   |   |--- smartbaseline_neglogpvalue_rank <= 0.86
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |   |--- smartbaseline_neglogpvalue_rank >  0.86
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 10
+|   |   |   |   |   |   |--- rtc_score_rank >  0.68
+|   |   |   |   |   |   |   |--- caviarbf_clpp <= 2471.00
+|   |   |   |   |   |   |   |   |--- smr_neglogpvalue_rank <= 0.08
+|   |   |   |   |   |   |   |   |   |--- rtc_score_rank <= 0.84
+|   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |--- rtc_score_rank >  0.84
+|   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |--- smr_neglogpvalue_rank >  0.08
+|   |   |   |   |   |   |   |   |   |--- finemap_clpp <= 478.50
+|   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |--- finemap_clpp >  478.50
+|   |   |   |   |   |   |   |   |   |   |--- smr_neglogpvalue <= 1406.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |   |--- smr_neglogpvalue >  1406.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |--- caviarbf_clpp >  2471.00
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |--- rtc_score >  1743.50
+|   |   |   |   |   |   |--- caviarbf_clpp_rank <= 0.00
+|   |   |   |   |   |   |   |--- coloc_h4_rank <= 0.02
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |--- coloc_h4_rank >  0.02
+|   |   |   |   |   |   |   |   |--- rtc_score <= 1747.00
+|   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |--- rtc_score >  1747.00
+|   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue <= 3154.50
+|   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue >  3154.50
+|   |   |   |   |   |   |   |   |   |   |--- baseline_neglogpvalue <= 2840.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |   |--- baseline_neglogpvalue >  2840.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- caviarbf_clpp_rank >  0.00
+|   |   |   |   |   |   |   |--- colocalization_status <= 648.50
+|   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |--- colocalization_status >  648.50
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |--- finemap_clpp_rank >  0.00
+|   |   |   |   |--- finemap_clpp_rank <= 0.00
+|   |   |   |   |   |--- class: True
+|   |   |   |   |--- finemap_clpp_rank >  0.00
+|   |   |   |   |   |--- baseline_neglogpvalue <= 2095.50
+|   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |--- baseline_neglogpvalue >  2095.50
+|   |   |   |   |   |   |--- class: True
+|   |   |--- coloc_h4_rank >  0.05
+|   |   |   |--- finemap_clpp_rank <= 0.00
+|   |   |   |   |--- finemap_clppmod <= 3817.50
+|   |   |   |   |   |--- smartbaseline_neglogpvalue_rank <= 2.54
+|   |   |   |   |   |   |--- rtc_score <= 458.50
+|   |   |   |   |   |   |   |--- finemap_clppmod <= 3223.00
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |--- finemap_clppmod >  3223.00
+|   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |--- rtc_score >  458.50
+|   |   |   |   |   |   |   |--- finemap_clppmod <= 3812.75
+|   |   |   |   |   |   |   |   |--- smr_neglogpvalue_rank <= 0.64
+|   |   |   |   |   |   |   |   |   |--- caviarbf_clpp <= 3693.50
+|   |   |   |   |   |   |   |   |   |   |--- smr_neglogpvalue <= 2163.00
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 13
+|   |   |   |   |   |   |   |   |   |   |--- smr_neglogpvalue >  2163.00
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 6
+|   |   |   |   |   |   |   |   |   |--- caviarbf_clpp >  3693.50
+|   |   |   |   |   |   |   |   |   |   |--- colocalization_status <= 623.50
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |   |--- colocalization_status >  623.50
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 6
+|   |   |   |   |   |   |   |   |--- smr_neglogpvalue_rank >  0.64
+|   |   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue_rank <= 0.90
+|   |   |   |   |   |   |   |   |   |   |--- finemap_clppmod <= 3636.50
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 5
+|   |   |   |   |   |   |   |   |   |   |--- finemap_clppmod >  3636.50
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 3
+|   |   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue_rank >  0.90
+|   |   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank <= 4.45
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 10
+|   |   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank >  4.45
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |--- finemap_clppmod >  3812.75
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |--- smartbaseline_neglogpvalue_rank >  2.54
+|   |   |   |   |   |   |--- finemap_clppmod_rank <= 0.08
+|   |   |   |   |   |   |   |--- colocalization_status <= 1867.00
+|   |   |   |   |   |   |   |   |--- baseline_neglogpvalue <= 1316.00
+|   |   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue <= 362.50
+|   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue >  362.50
+|   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |--- baseline_neglogpvalue >  1316.00
+|   |   |   |   |   |   |   |   |   |--- smartbaseline_neglogpvalue <= 1244.00
+|   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |--- smartbaseline_neglogpvalue >  1244.00
+|   |   |   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue_rank <= 0.58
+|   |   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue_rank >  0.58
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |--- colocalization_status >  1867.00
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- finemap_clppmod_rank >  0.08
+|   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |--- finemap_clppmod >  3817.50
+|   |   |   |   |   |--- class: False
+|   |   |   |--- finemap_clpp_rank >  0.00
+|   |   |   |   |--- smr_neglogpvalue_rank <= 0.65
+|   |   |   |   |   |--- smr_neglogpvalue_rank <= 0.05
+|   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |--- smr_neglogpvalue_rank >  0.05
+|   |   |   |   |   |   |--- baseline_neglogpvalue <= 386.00
+|   |   |   |   |   |   |   |--- caviarbf_clpp_rank <= 0.00
+|   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |--- caviarbf_clpp_rank >  0.00
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- baseline_neglogpvalue >  386.00
+|   |   |   |   |   |   |   |--- caviarbf_clpp_rank <= 0.00
+|   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |--- caviarbf_clpp_rank >  0.00
+|   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank <= 0.09
+|   |   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue_rank <= 0.06
+|   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |   |--- smrheidiadjusted_neglogpvalue_rank >  0.06
+|   |   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank <= 0.01
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank >  0.01
+|   |   |   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank >  0.09
+|   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |--- smr_neglogpvalue_rank >  0.65
+|   |   |   |   |   |--- rtc_score <= 449.00
+|   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |--- rtc_score >  449.00
+|   |   |   |   |   |   |--- smr_neglogpvalue <= 461.00
+|   |   |   |   |   |   |   |--- caviarbf_clpp <= 376.50
+|   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |--- caviarbf_clpp >  376.50
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- smr_neglogpvalue >  461.00
+|   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank <= 0.13
+|   |   |   |   |   |   |   |   |--- coloc_h4_rank <= 0.08
+|   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |--- coloc_h4_rank >  0.08
+|   |   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |   |--- gsmr_neglogpvalue_rank >  0.13
+|   |   |   |   |   |   |   |   |--- baseline_neglogpvalue <= 2499.50
+|   |   |   |   |   |   |   |   |   |--- rtc_score_rank <= 0.92
+|   |   |   |   |   |   |   |   |   |   |--- caviarbf_clpp <= 274.00
+|   |   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |   |   |--- caviarbf_clpp >  274.00
+|   |   |   |   |   |   |   |   |   |   |   |--- truncated branch of depth 2
+|   |   |   |   |   |   |   |   |   |--- rtc_score_rank >  0.92
+|   |   |   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |   |--- baseline_neglogpvalue >  2499.50
+|   |   |   |   |   |   |   |   |   |--- class: True
+|   |--- rtc_score_rank >  0.94
+|   |   |--- rtc_score <= 3210.50
+|   |   |   |--- smartbaseline_neglogpvalue <= 3730.00
+|   |   |   |   |--- finemap_clpp <= 221.00
+|   |   |   |   |   |--- class: True
+|   |   |   |   |--- finemap_clpp >  221.00
+|   |   |   |   |   |--- colocalization_status <= 3101.50
+|   |   |   |   |   |   |--- smr_neglogpvalue_rank <= 1.53
+|   |   |   |   |   |   |   |--- finemap_clppmod <= 3621.50
+|   |   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |   |--- finemap_clppmod >  3621.50
+|   |   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |   |--- smr_neglogpvalue_rank >  1.53
+|   |   |   |   |   |   |   |--- class: False
+|   |   |   |   |   |--- colocalization_status >  3101.50
+|   |   |   |   |   |   |--- caviarbf_clpp <= 874.50
+|   |   |   |   |   |   |   |--- class: True
+|   |   |   |   |   |   |--- caviarbf_clpp >  874.50
+|   |   |   |   |   |   |   |--- class: False
+|   |   |   |--- smartbaseline_neglogpvalue >  3730.00
+|   |   |   |   |--- class: False
+|   |   |--- rtc_score >  3210.50
+|   |   |   |--- baseline_neglogpvalue_rank <= 0.89
+|   |   |   |   |--- class: False
+|   |   |   |--- baseline_neglogpvalue_rank >  0.89
+|   |   |   |   |--- class: True
