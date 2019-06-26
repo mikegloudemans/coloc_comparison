@@ -47,35 +47,45 @@ print(accuracy_score(testY, predY))
 predProbY = logreg.predict_proba(testX)
 print(predProbY)
 
-# Compute ROC curve and ROC area for each class
+
+#load submethod names
+method_names_path = "/users/j29tien/colocalization_ML/feature_names.tsv"
+df = pd.read_csv(method_names_path, sep="\t")
+method_names = df.columns.values
+
+# Compute ROC curve and ROC area for each method
 fpr = dict()
 tpr = dict()
 roc_auc = dict()
-#for i in range(n_classes):
-    #fpr[i], tpr[i], _ = roc_curve(testY[:, i], predProbY[:, i])
-    #roc_auc[i] = auc(fpr[i], tpr[i])
 
-fpr,tpr,_ = roc_curve(testY, predProbY[:,1])
-roc_auc = auc(fpr, tpr)
+n_submethods = 10 #coloc, rtc, finemap-clpp, finemap-clpp_mod, caviarbf, baseline, smart_baseline, smr, smr-heidi, gsmr
+for i in range(n_submethods):
+    fpr[i], tpr[i], _ = roc_curve(testY, testX[:, i*2]) #pulling out rows of raw scores from each method (row 0, 2, 4, ... 18)
+    roc_auc[i] = auc(fpr[i], tpr[i])
+# store ensemble performance at n_submethods'th index
+fpr[n_submethods],tpr[n_submethods],_ = roc_curve(testY, predProbY[:,1]) # index gives probability for 0/FALSE, then 1/TRUE
+roc_auc[n_submethods] = auc(fpr[n_submethods], tpr[n_submethods])
 
-# Compute micro-average ROC curve and ROC area --> NOT NECESSARY, not multiclass (only TRUE or FALSE)
-#fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
-#roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
-
-
-weights = np.ravel(logreg.coef_) # returns a matrix of weights (coefficients)
-print(weights)
+#weights = np.ravel(logreg.coef_) # returns a matrix of weights (coefficients)
+#print(weights)
 
 # plot ROC for the multilogreg ensemble method
-plt.figure()
+plt.figure(figsize=(20, 15))
 lw = 2
-plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot(fpr[n_submethods], tpr[n_submethods], color='darkorange', linewidth=4, linestyle = ':', label='ensemble, logisitic regression (area = %0.2f)' % roc_auc[n_submethods])
 plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+
+colors = cycle(['aqua', 'dimgray', 'cornflowerblue', 'orangered', 'gold', 'chartreuse', 'forestgreen', 'darkviolet', 'deeppink', 'crimson'])
+for i, color in zip(range(n_submethods), colors):
+    plt.plot(fpr[i], tpr[i], color=color, lw=lw,
+             label='{0} (area = {1:0.2f})'
+             ''.format(method_names[i*2], roc_auc[i]))
+
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Receiver operating characteristic example')
+plt.title('Comparison of colocalization identification methods')
 plt.legend(loc="lower right")
-plt.savefig("/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/eval/multilogreg_ROC.png")
+plt.savefig("/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/eval/comp_ROC.png")
 
