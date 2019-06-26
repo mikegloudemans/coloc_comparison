@@ -66,9 +66,6 @@ for i in range(n_submethods):
 fpr[n_submethods],tpr[n_submethods],_ = roc_curve(testY, predProbY[:,1]) # index gives probability for 0/FALSE, then 1/TRUE
 roc_auc[n_submethods] = auc(fpr[n_submethods], tpr[n_submethods])
 
-#weights = np.ravel(logreg.coef_) # returns a matrix of weights (coefficients)
-#print(weights)
-
 # plot ROC for the multilogreg ensemble method
 plt.figure(figsize=(20, 15))
 lw = 2
@@ -87,5 +84,5 @@ plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('Comparison of colocalization identification methods')
 plt.legend(loc="lower right")
-plt.savefig("/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/eval/comp_ROC.png")
+plt.savefig("/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/eval/eval_multilogreg/comp_ROC.png")
 
