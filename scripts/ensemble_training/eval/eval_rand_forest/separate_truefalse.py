@@ -17,5 +17,9 @@ false_matrix.to_csv('/users/j29tien/colocalization_ML/false_colocalizations.tsv'
 ### PLAN: then, evaluate it on a training dataset that has a higher proportion of TRUE colocalizations
 
 # create set with higher proportion of TRUEs
+heavily_true = pd.concat(true_matrix.loc[0:int(len(true_matrix.index)*0.667), :], false_matrix.loc[0:int(len(false_matrix.index)*0.1), :], ignore_index=True)
 
+heavily_false = pd.concat(true_matrix.loc[int(len(true_matrix.index)*0.667)+1 :len(true_matrix.index)-1, :], false_matrix.loc[int(len(false_matrix.index)*0.1)+1 :len(false_matrix.index)-1, :], ignore_index=True)
 
+heavily_true.to_csv('/users/j29tien/colocalization_ML/highprop_true.tsv', sep='\t', index=False)
+heavily_false.to_csv('/users/j29tien/colocalization_ML/highprop_false.tsv', sep='\t', index=False)
