@@ -13,16 +13,14 @@ from scipy import interp
 from sklearn.metrics import accuracy_score
 
 
-training_save_path = "/users/j29tien/colocalization_ML/training_set.tsv"
-trainingKEY_save_path = "/users/j29tien/colocalization_ML/training_set_KEY.tsv"
+training_save_path = "/users/j29tien/colocalization_ML/highprop_false.tsv" # train on dataset that has a larger proportion of falses. (this dataset happens to be larger; more suitable for training)
 
 #load trainX, the training dataset
 df = pd.read_csv(training_save_path, sep="\t")   # read .tsv file into memory
-trainX = df.to_numpy()  # access the numpy array containing values
+trainX = df.drop('colocalization_status', 1).to_numpy()  # access the numpy array containing values
 
 #load trainY, the answer key for training
-df = pd.read_csv(trainingKEY_save_path, sep="\t")   # read .tsv file into memory
-trainY = df.to_numpy()  # access the numpy array containing values
+trainY = df['colocalization_status'].to_numpy()  # access the numpy array containing values
 trainY = np.ravel(trainY)
 
 # Binarize the output
@@ -36,13 +34,11 @@ randfor.fit(trainX, trainY)
 
 #predict using test dataset
 #load test data and KEY
-test_save_path = "/users/j29tien/colocalization_ML/test_set.tsv"
-testKEY_save_path = "/users/j29tien/colocalization_ML/test_set_KEY.tsv"
+test_save_path = "/users/j29tien/colocalization_ML/highprop_true.tsv"
 df = pd.read_csv(test_save_path, sep="\t")   # read .tsv file into memory
-testX = df.to_numpy()  # access the numpy array containing values
+testX = df.drop('colocalization_status', 1).to_numpy()  # access the numpy array containing values
 
-df = pd.read_csv(testKEY_save_path, sep="\t")   # read .tsv file into memory
-testY = df.to_numpy()  # access the numpy array containing values
+testY = df['colocalization_status'].to_numpy()  # access the numpy array containing values
 
 #predict and score using test data
 predY = randfor.predict(testX)
@@ -64,7 +60,7 @@ roc_auc = dict()
 
 n_submethods = 10 #coloc, rtc, finemap-clpp, finemap-clpp_mod, caviarbf, baseline, smart_baseline, smr, smr-heidi, gsmr
 for i in range(n_submethods):
-    fpr[i], tpr[i], _ = roc_curve(testY, testX[:, i*2]) #pulling out rows of raw scores from each method (row 0, 2, 4, ... 18)
+    fpr[i], tpr[i], _ = roc_curve(testY, testX[:, i]) #pulling out rows of raw scores from each method (row 0, 1, 2, ... 9)
     roc_auc[i] = auc(fpr[i], tpr[i])
 # store ensemble performance at n_submethods'th index
 fpr[n_submethods],tpr[n_submethods],_ = roc_curve(testY, predProbY[:,1]) # index gives probability for 0/FALSE, then 1/TRUE
@@ -88,10 +84,7 @@ plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('Comparison of colocalization identification methods')
 plt.legend(loc="lower right")
-plt.savefig("/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/eval/eval_rand_forest/comp_ROC.png")
-
-
-
+plt.savefig("/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/eval/eval_rand_forest/rankless_comp_ROC.png")
 
 
 #feature importances for the random forest
