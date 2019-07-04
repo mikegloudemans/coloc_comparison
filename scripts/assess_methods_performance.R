@@ -89,6 +89,9 @@ compare_methods = function(answer_key, timestamp)
 	bl_results = get_baseline_results(bl_base_dir)
 	bl_problems = gsub("eqtl_sumstats", "", bl_results$eqtl_file)
 	bl_problems = as.numeric(gsub("_txt_gz", "", bl_problems))
+	twas_results = get_twas_results(twas_base_dir)
+	twas_problems = gsub("eqtl_sumstats", "", twas_results$eqtl_file)
+	twas_problems = as.numeric(gsub("_txt_gz", "", twas_problems))
 	smr_results = get_smr_results(smr_base_dir)
 	smr_problems = gsub("eqtl_sumstats", "", smr_results$eqtl_file)
 	smr_problems = as.numeric(gsub("_txt_gz", "", smr_problems))
@@ -102,9 +105,6 @@ compare_methods = function(answer_key, timestamp)
 	smr_results$heidi_adjusted_pval = smr_results$smr_neg_log_pval
 	smr_results$heidi_adjusted_pval[heidi_fails] = 0
 	
-	#twas_results = get_twas_results(twas_base_dir)
-	#twas_problems = gsub("eqtl_sumstats", "", twas_results$eqtl_file)
-	#twas_problems = as.numeric(gsub("_txt_gz", "", twas_problems))
 
 	problems = rtc_problems[rtc_problems %in% finemap_problems]
 	problems = problems[problems %in% coloc_problems]
@@ -112,7 +112,7 @@ compare_methods = function(answer_key, timestamp)
 	problems = problems[problems %in% bl_problems]
 	problems = problems[problems %in% smr_problems]
 	problems = problems[problems %in% gsmr_problems]
-	#problems = problems[problems %in% twas_problems]
+	problems = problems[problems %in% twas_problems]
 	problems = problems[problems %in% answer_key$test_case]
 
 	selection = match(answer_indices, problems)
@@ -131,7 +131,7 @@ compare_methods = function(answer_key, timestamp)
 	smr = scale(smr_results$smr_neg_log_pval[match(problem_set, smr_problems)])
 	smr_heidi = scale(smr_results$heidi_adjusted_pval[match(problem_set, smr_problems)])
 	gsmr = scale(gsmr_results$smr_neg_log_pval[match(problem_set, gsmr_problems)])
-	#twas_p = scale(twas_results$twas_log_pval[match(problem_set, twas_problems)])
+	twas_p = scale(twas_results$twas_log_pval[match(problem_set, twas_problems)])
 
 	plot(roc(answers, as.numeric(clpp)), print.auc = TRUE, col = "black", print.auc.x = 0.2, print.auc.y = 0.32, main = "Colocalization detection performance")
 	plot(roc(answers, as.numeric(clpp_mod)), print.auc = TRUE, col = "red", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.28)
@@ -143,7 +143,7 @@ compare_methods = function(answer_key, timestamp)
 	plot(roc(answers, as.numeric(smr)), print.auc = TRUE, col = "darkgoldenrod4", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.40)
 	plot(roc(answers, as.numeric(smr_heidi)), print.auc = TRUE, col = "deeppink2", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.44)
 	plot(roc(answers, as.numeric(gsmr)), print.auc = TRUE, col = "forestgreen", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.48)
-	#plot(roc(answers, as.numeric(twas_p)), print.auc = TRUE, col = "orange", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.12)
+	plot(roc(answers, as.numeric(twas_p)), print.auc = TRUE, col = "orange", add = TRUE, print.auc.x = 0.2, print.auc.y = 0.12)
 
 	# Make colocalization matrix for Jeremy to mess around with for ensemble approach
 	colocalization_matrix = data.frame(list(coloc_h4=coloc_results$clpp_h4[match(problem_set, coloc_problems)],
@@ -166,13 +166,15 @@ compare_methods = function(answer_key, timestamp)
 						smrheidiadjusted_neglogpvalue_rank=rank(-smr_results$heidi_adjusted_pval[match(problem_set, smr_problems)]),
 						gsmr_neglogpvalue=gsmr_results$smr_neg_log_pval[match(problem_set, gsmr_problems)],
 						gsmr_neglogpvalue_rank=rank(-gsmr_results$smr_neg_log_pval[match(problem_set, gsmr_problems)]),
+						twas_neglogpvalue=twas_results$twas_log_pval[match(problem_set, twas_problems)],
+						twas_neglogpvalue_rank=rank(-twas_results$twas_log_pval[match(problem_set, twas_problems)]),
 						colocalization_status=answers))
 	write.table(colocalization_matrix, "/users/mgloud/projects/coloc_comparisons/jeremy/colocalization_matrix.tsv", quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")	
 
 	# With smart baseline included
-	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + bl5 + smr + gsmr #+ twas_p
+	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + bl5 + smr + gsmr + twas_p
 	# Without baseline included
-	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + smr + gsmr#+ twas_p
+	ensemble = h4pp + rtc + clpp + clpp_mod + bf_clpp + smr + gsmr + twas_p
 	
 	ensemble = ensemble / max(ensemble)
 	plot(roc(answers, ensemble), print.auc = TRUE, col = "purple", add=TRUE, print.auc.x = 0.2, print.auc.y = 0.08 )

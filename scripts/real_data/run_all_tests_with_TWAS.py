@@ -24,9 +24,6 @@ def main():
 
     kept_data = sorted(kept_data, key=operator.itemgetter(2))
 
-    # temporary
-    kept_data = kept_data[:30]
-
     # Then for every locus in the "kept data"...
     for i in range(len(kept_data)):
 
@@ -58,7 +55,7 @@ def main():
         # Run the test
         subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/tmp/lc_config{0}.config 1 &".format(i), shell=True)
 
-        while int(subprocess.check_output('''ps -ef | grep "python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/tmp/lc_config" | wc -l''', shell=True)) > 2:
+        while int(subprocess.check_output('''ps -ef | grep "python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/tmp/lc_config" | wc -l''', shell=True)) > 20:
             time.sleep(5)
 
 template = '''

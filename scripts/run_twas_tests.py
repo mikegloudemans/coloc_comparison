@@ -26,12 +26,20 @@ config_template = '''
 
         "gwas_experiments": 
 	{{
-            "{1}/hg19/gwas/gwas_sumstats{0}.txt.gz": {{"ref": "1kgenomes", "gwas_format": "effect_size"}}
+            "{1}/hg19/gwas/gwas_sumstats{0}.txt.gz": 
+            {{
+                "ref": "1kgenomes", 
+                "gwas_format": "effect_size"
+            }}
 	}},
 	
 	"eqtl_experiments":	
 	{{
-            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": {{"ref": "ref-file"}}
+            "{1}/hg19/eqtl/eqtl_sumstats{0}.txt.gz": 
+            {{
+                "ref": "ref-file",
+                "phenos": "{1}/hg19/eqtl/eqtl_phenotypes{0}.bed.gz"
+            }}
 	}},
 
 	"methods": 
@@ -54,16 +62,15 @@ config_template = '''
 	        }},
                 "ref-file":
                 {{
-                    "file":
-                        "{1}/hg19/eqtl/eqtl_genotypes{0}.vcf.gz", "phenos": "{1}/hg19/eqtl/eqtl_phenotypes{0}.bed.gz"}},
-                    "af_attribute":
-                        "",
+                    "file": "{1}/hg19/eqtl/eqtl_genotypes{0}.vcf.gz", 
+                    "filtered_by_af": "True",
+                    "chr_prefix": "chr"
+                }},
+                
+                "af_attribute":"",
 
-                    "N":
-                        1000
-                }}
+                "N": 1000
         }}
-
 }}
 '''
 
