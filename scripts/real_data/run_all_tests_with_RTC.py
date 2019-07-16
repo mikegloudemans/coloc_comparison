@@ -26,6 +26,16 @@ def main():
 
     kept_data = sorted(kept_data, key=operator.itemgetter(2))
 
+    # Load persistent data
+    pheno_file = "/mnt/lab_data/montgomery/shared/datasets/gtex/GTEx_Analysis_2016-01-15_v7/rna-seq/GTEx_Analysis_v7_RNA-seq_RNA-SeQCv1.1.8_gene_rpkm.gct.gz"
+    id_file = "/mnt/lab_data/montgomery/shared/datasets/gtex/GTEx_Analysis_2016-01-15_v7/sample_annotations/GTEx_Analysis_2016-01-15_v7_SampleAttributesDS.txt"
+    
+    # Load in map of IDs 
+    id_map = pd.read_csv(id_file, sep="\t")
+    id_map['SMTSD'] = id_map['SMTSD'].apply(lambda x: x.replace(" - ", "_")).apply(lambda x: x.replace(" ", "_")).apply(lambda x: x.replace("(", "")).apply(lambda x: x.replace(")", ""))
+        
+    pheno_map = pd.read_csv(pheno_file, sep="\t", skiprows=2)
+
     # Then for every locus in the "kept data"...
     for i in range(len(kept_data)):
 
@@ -55,15 +65,12 @@ def main():
         # files are specified and then the script pulls out the necessary subset of info
        
         geno_file = "/mnt/lab_data/montgomery/shared/datasets/gtex/GTEx_Analysis_2016-01-15_v7/genotypes/WGS/variant_calls/GTEx_Analysis_2016-01-15_v7_WholeGenomeSeq_652Ind_GATK_HaplotypeCaller.vcf.gz"
-        pheno_file = "/mnt/lab_data/montgomery/shared/datasets/gtex/GTEx_Analysis_2016-01-15_v7/rna-seq/GTEx_Analysis_v7_RNA-seq_RNA-SeQCv1.1.8_gene_rpkm.gct.gz"
-        id_file = "/mnt/lab_data/montgomery/shared/datasets/gtex/GTEx_Analysis_2016-01-15_v7/sample_annotations/GTEx_Analysis_2016-01-15_v7_SampleAttributesDS.txt"
 
         # Figure out which tissue we're going for
         tissue = test[3].split("/")[-1].split(".")[0]
 
-        # Load in map of IDs, get all corresponding to our tissue of interest
-        id_map = pd.read_csv(id_file, sep="\t")
-        id_map['SMTSD'] = id_map['SMTSD'].apply(lambda x: x.replace(" - ", "_")).apply(lambda x: x.replace(" ", "_")).apply(lambda x: x.replace("(", "")).apply(lambda x: x.replace(")", ""))
+       
+        # Get all samples corresponding to our tissue of interest
         id_map = id_map[(id_map['SMTSD'] == tissue).values]
         tissue_samples = list(id_map['SAMPID'])
 
@@ -81,8 +88,11 @@ def main():
         genotypes["#CHROM"] = genotypes["#CHROM"].apply(lambda x: "chr" + str(x))
 
         # Filter expression matrix down to a single gene of interest
-        subprocess.check_call("zcat {0} 2> /dev/null | tail -n +3 2> /dev/null | head -n 1 > /users/mgloud/projects/coloc_comparisons/tmp/phenotype.tmp".format(pheno_file), shell=True)
-        subprocess.check_call("zcat {0} | grep -w {1} >> /users/mgloud/projects/coloc_comparisons/tmp/phenotype.tmp".format(pheno_file, test[7]), shell=True)
+        pheno_sub = pheno_map[pheno_map['Name'] == test[7]]
+        pheno_sub.to_csv("/users/mgloud/projects/coloc_comparisons/tmp/phenotype.tmp", sep="\t")
+
+        #subprocess.check_call("zcat {0} 2> /dev/null | tail -n +3 2> /dev/null | head -n 1 > /users/mgloud/projects/coloc_comparisons/tmp/phenotype.tmp".format(pheno_file), shell=True)
+        #subprocess.check_call("zcat {0} | grep -w {1} >> /users/mgloud/projects/coloc_comparisons/tmp/phenotype.tmp".format(pheno_file, test[7]), shell=True)
 
         # Load subsetted expression matrix and further subset down to samples from tissue of interest
         # (may require also looking at genotype matrix to find the intersection)
@@ -131,13 +141,11 @@ def main():
         # Run the test
         subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/rtc_real_config{0}.config 1 &".format(i), shell=True)
 
-        while int(subprocess.check_output('''ps -ef | grep -v grep | grep "python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/gwas/coloc_comparisons/rtc_real_config" | wc -l''', shell=True)) > 2:
+        while int(subprocess.check_output('''ps -ef | grep -v grep | grep "python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/rtc_real_config" | wc -l''', shell=True)) > 2:
             time.sleep(5)
 
 template = '''
 {
-        "debug": "True",
-
         "out_dir_group": "some-locus-compare-tests-with-rtc",
 
         "gwas_experiments": 

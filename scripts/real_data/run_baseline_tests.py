@@ -10,6 +10,7 @@ import time
 def main():
     # Reset things fresh on each run, so we're not mixing results
     subprocess.call("rm -rf /users/mgloud/projects/brain_gwas/output/some-locus-compare-baseline-tests/*", shell=True)
+    subprocess.call("rm -rf /users/mgloud/projects/coloc_comparisons/tmp/*", shell=True)
 
     kept_data = []
     with open("/users//mgloud/projects/gwas/output/snps_to_test.txt") as f:

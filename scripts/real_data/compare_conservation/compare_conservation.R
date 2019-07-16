@@ -1,5 +1,4 @@
-conservation_window = 100
-
+conservation_window = 1
 
 # Get sets of top colocalizations for each method
 source("/users/mgloud/projects/coloc_comparisons/scripts/real_data/compare_coloc_finemap.R")

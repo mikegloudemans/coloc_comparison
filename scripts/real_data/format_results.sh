@@ -98,6 +98,36 @@ for f in `ls /users/mgloud/projects/brain_gwas/output/some-locus-compare-baselin
 	cat /users/mgloud/projects/brain_gwas/output/some-locus-compare-baseline-tests/$f/skipped* 2> /dev/null | tail -n +2 >> /users/mgloud/projects/coloc_comparisons/output/baseline/skipped.txt 2> /dev/null
 
 	# Also copy the plots to a combined folder
-	cp -r /users/mgloud/projects/brain_gwas/output/some-locus-compare-baseline-tests/$f/plots/* /users/mgloud/projects/coloc_comparisons/output/seline/plots 2> /dev/null
+	cp -r /users/mgloud/projects/brain_gwas/output/some-locus-compare-baseline-tests/$f/plots/* /users/mgloud/projects/coloc_comparisons/output/baseline/plots 2> /dev/null
+done
+
+###############################################
+# TWAS
+###############################################
+
+mkdir -p /users/mgloud/projects/coloc_comparisons/output/twas/plots
+
+for f in `ls -1 /users/mgloud/projects/brain_gwas/output/some-locus-compare-tests-with-twas/*/*twas* | head -n 1`; do
+	cat $f | head -n 1 > /users/mgloud/projects/coloc_comparisons/output/twas/twas_results.txt
+done
+
+for f in `ls -1 /users/mgloud/projects/brain_gwas/output/some-locus-compare-tests-with-twas/*/*ERROR* | head -n 1`; do
+	cat $f | head -n 1 > /users/mgloud/projects/coloc_comparisons/output/twas/errors.txt
+done
+
+for f in `ls -1 /users/mgloud/projects/brain_gwas/output/some-locus-compare-tests-with-twas/*/*skipped* | head -n 1`; do
+	cat $f | head -n 1 > /users/mgloud/projects/coloc_comparisons/output/twas/skipped.txt
+done
+
+for f in `ls /users/mgloud/projects/brain_gwas/output/some-locus-compare-tests-with-twas`; do
+	finemap_file=`ls -1 /users/mgloud/projects/brain_gwas/output/some-locus-compare-tests-with-twas/$f/*twas* | head -n 1`
+	cat $finemap_file | tail -n +2 >> /users/mgloud/projects/coloc_comparisons/output/twas/twas_results.txt
+
+	cat /users/mgloud/projects/brain_gwas/output/some-locus-compare-tests-with-twas/$f/ERROR* 2> /dev/null | tail -n +2 >> /users/mgloud/projects/coloc_comparisons/output/twas/errors.txt 2> /dev/null
+	
+	cat /users/mgloud/projects/brain_gwas/output/some-locus-compare-twas-tests/$f/skipped* 2> /dev/null | tail -n +2 >> /users/mgloud/projects/coloc_comparisons/output/twas/skipped.txt 2> /dev/null
+
+	# Also copy the plots to a combined folder
+	cp -r /users/mgloud/projects/brain_gwas/output/some-locus-compare-twas-tests/$f/plots/* /users/mgloud/projects/coloc_comparisons/output/baseline/plots 2> /dev/null
 done
 
