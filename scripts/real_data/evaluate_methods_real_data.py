@@ -17,13 +17,13 @@ def main():
         template = f.read()
 
     # Purge tmp files
-    subprocess.call("rm -rf /users/mgloud/projects/coloc_comparisons/tmp/*", shell=True)
+    subprocess.call("rm -rf /users/mgloud/projects/coloc_comparisons/tmp/real_data", shell=True)
+    subprocess.call("mkdir -p /users/mgloud/projects/coloc_comparisons/tmp/real_data", shell=True)
     
     # Create new subdirectory with time-stamp for this run
     now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S.%f')
     #out_dir = "/users/mgloud/projects/brain_gwas/output/coloc_comparisons/{0}".format(now)
     out_dir = "coloc_comparisons/{0}".format(now)
-    subprocess.check_call("mkdir -p {0}".format(out_dir), shell=True)
 
     temp = json.loads(template)
     
@@ -58,7 +58,7 @@ def main():
     pool.join()
 
     # Purge tmp files
-    subprocess.call("rm -rf /users/mgloud/projects/coloc_comparisons/tmp/*", shell=True)
+    subprocess.call("rm -rf /users/mgloud/projects/coloc_comparisons/tmp/real_data/*", shell=True)
 
 
 def launch_pipeline_wrapper(template, kept_data, out_dir, i):
@@ -75,7 +75,7 @@ def launch_pipeline(template, kept_data, out_dir, i):
     print test
     
     temp = json.loads(template)["coloc_settings"]
-    temp["snp_list_file"] = "/users/mgloud/projects/coloc_comparisons/tmp/snp_list{0}.txt".format(i)
+    temp["snp_list_file"] = "/users/mgloud/projects/coloc_comparisons/tmp/real_data/snp_list{0}.txt".format(i)
     temp["out_dir_group"] = out_dir
 
     if "smr" in temp["methods"]:
@@ -91,7 +91,7 @@ def launch_pipeline(template, kept_data, out_dir, i):
         return
 
     # Add locus to SNP list...but only once for each gene
-    with open("/users/mgloud/projects/coloc_comparisons/tmp/snp_list{0}.txt".format(i), "w") as w:
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/real_data/snp_list{0}.txt".format(i), "w") as w:
         # Chrom / SNP / gene
         w.write("{0}\t{1}\t{2}\n".format(test[0], test[1], test[7]))
            
@@ -114,17 +114,17 @@ def launch_pipeline(template, kept_data, out_dir, i):
         }
 
     if "rtc" in temp["methods"]:
-        temp["eqtl_experiments"][test[3]]["rtc_genos"] = "/users/mgloud/projects/coloc_comparisons/tmp/genos{0}.vcf.gz".format(i)
-        temp["eqtl_experiments"][test[3]]["rtc_phenos"] = "/users/mgloud/projects/coloc_comparisons/tmp/phenos{0}.bed.gz".format(i)
+        temp["eqtl_experiments"][test[3]]["rtc_genos"] = "/users/mgloud/projects/coloc_comparisons/tmp/real_data/genos{0}.vcf.gz".format(i)
+        temp["eqtl_experiments"][test[3]]["rtc_phenos"] = "/users/mgloud/projects/coloc_comparisons/tmp/real_data/phenos{0}.bed.gz".format(i)
 
         prep_rtc_input(test, i)
 
     # Write config file to the appropriate directory
-    with open("/users/mgloud/projects/coloc_comparisons/tmp/coloc_comparisons{0}.config".format(i), "w") as w:
+    with open("/users/mgloud/projects/coloc_comparisons/tmp/real_data/coloc_comparisons{0}.config".format(i), "w") as w:
         json.dump(temp, w)
 
     # Run the test
-    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/coloc_comparisons{0}.config 1".format(i), shell=True)
+    subprocess.call("python /users/mgloud/projects/brain_gwas/scripts/dispatch.py /users/mgloud/projects/coloc_comparisons/tmp/real_data/coloc_comparisons{0}.config 1".format(i), shell=True)
 
 def prep_rtc_input(test, i, rtc_index_dir = "/users/mgloud/projects/coloc_comparisons/data/rtc-gene-index"):
         # Do preprocessing to prepare the additional input for RTC! (Note: eventually
@@ -147,14 +147,14 @@ def prep_rtc_input(test, i, rtc_index_dir = "/users/mgloud/projects/coloc_compar
 
         # Subset genotype file down to region of interest
         # Header
-        subprocess.check_call("zcat {0} 2> /dev/null | head -n 2000 | grep \#CHROM > /users/mgloud/projects/coloc_comparisons/tmp/genotype_vcf{1}.tmp".format(geno_file, i), shell=True)
-        subprocess.check_call("zcat {0} 2> /dev/null | head -n 2000 | grep \## > /users/mgloud/projects/coloc_comparisons/tmp/genos{1}.vcf".format(geno_file, i), shell=True)
+        subprocess.check_call("zcat {0} 2> /dev/null | head -n 2000 | grep \#CHROM > /users/mgloud/projects/coloc_comparisons/tmp/real_data/genotype_vcf{1}.tmp".format(geno_file, i), shell=True)
+        subprocess.check_call("zcat {0} 2> /dev/null | head -n 2000 | grep \## > /users/mgloud/projects/coloc_comparisons/tmp/real_data/genos{1}.vcf".format(geno_file, i), shell=True)
         # Everything else we need
-        subprocess.check_call('''tabix {0} {1}:{2}-{3} | awk '{{split($3, a, "_");  $3=a[1] "_" a[2]; print $0}}' | sed s/\\ /\\\\t/g >> /users/mgloud/projects/coloc_comparisons/tmp/genotype_vcf{4}.tmp'''.format(geno_file, test[0], int(test[1]) - 1000000, int(test[1]) + 1000000, i), shell=True)
+        subprocess.check_call('''tabix {0} {1}:{2}-{3} | awk '{{split($3, a, "_");  $3=a[1] "_" a[2]; print $0}}' | sed s/\\ /\\\\t/g >> /users/mgloud/projects/coloc_comparisons/tmp/real_data/genotype_vcf{4}.tmp'''.format(geno_file, test[0], int(test[1]) - 1000000, int(test[1]) + 1000000, i), shell=True)
 
         # Load subsetted genotype (No filtering is actually needed for the
         # individuals in the genotype matrix, because QTLtools performs this filtering)
-        genotypes = pd.read_csv("/users/mgloud/projects/coloc_comparisons/tmp/genotype_vcf{0}.tmp".format(i), sep="\t")
+        genotypes = pd.read_csv("/users/mgloud/projects/coloc_comparisons/tmp/real_data/genotype_vcf{0}.tmp".format(i), sep="\t")
         genotypes["#CHROM"] = genotypes["#CHROM"].apply(lambda x: "chr" + str(x))
 
         # Get expression matrix for the gene we want
@@ -164,15 +164,11 @@ def prep_rtc_input(test, i, rtc_index_dir = "/users/mgloud/projects/coloc_compar
         g1 = gene[:2]
         g2 = gene[2:4]
        
-        print os.listdir("{0}/{1}/{2}".format(rtc_index_dir, g1, g2))
-        print gene
         if "{0}.txt".format(gene) not in os.listdir("{0}/{1}/{2}".format(rtc_index_dir, g1, g2)):
             # Eventually might want to actually log this to a file
             return "Gene not found in RTC table"
         pheno_sub = pd.read_csv("{0}/{1}/{2}/{3}.txt".format(rtc_index_dir, g1, g2, gene), sep="\t", header=None, names = header)
-        print pheno_sub.head()
 
-        #pheno_sub = pheno_map[pheno_map['Name'] == test[7]]
         tissue_subset = ["Name"] + [e for e in list(pheno_sub.columns.values) if e in tissue_samples]
         expression = pheno_sub[tissue_subset]
 
@@ -195,15 +191,15 @@ def prep_rtc_input(test, i, rtc_index_dir = "/users/mgloud/projects/coloc_compar
         expression = expression[column_ids]
 
         # Rewrite genotype matrix, bgzip and tabix
-        with open("/users/mgloud/projects/coloc_comparisons/tmp/genos{0}.vcf".format(i), "a") as a:
+        with open("/users/mgloud/projects/coloc_comparisons/tmp/real_data/genos{0}.vcf".format(i), "a") as a:
             genotypes.to_csv(a, sep="\t", index=False)
-        subprocess.check_call("bgzip -f /users/mgloud/projects/coloc_comparisons/tmp/genos{0}.vcf".format(i), shell=True)
-        subprocess.check_call("tabix -f -S 2 -s 1 -b 2 -e 2 /users/mgloud/projects/coloc_comparisons/tmp/genos{0}.vcf.gz".format(i), shell=True)
+        subprocess.check_call("bgzip -f /users/mgloud/projects/coloc_comparisons/tmp/real_data/genos{0}.vcf".format(i), shell=True)
+        subprocess.check_call("tabix -f -S 2 -s 1 -b 2 -e 2 /users/mgloud/projects/coloc_comparisons/tmp/real_data/genos{0}.vcf.gz".format(i), shell=True)
 
         # Rewrite expression matrix and bgzip and tabix
-        expression.to_csv("/users/mgloud/projects/coloc_comparisons/tmp/phenos{0}.bed".format(i), sep="\t", index=False)
-        subprocess.check_call("bgzip -f /users/mgloud/projects/coloc_comparisons/tmp/phenos{0}.bed".format(i), shell=True)
-        subprocess.check_call("tabix -f -S 1 -s 1 -b 2 -e 3 /users/mgloud/projects/coloc_comparisons/tmp/phenos{0}.bed.gz".format(i), shell=True)
+        expression.to_csv("/users/mgloud/projects/coloc_comparisons/tmp/real_data/phenos{0}.bed".format(i), sep="\t", index=False)
+        subprocess.check_call("bgzip -f /users/mgloud/projects/coloc_comparisons/tmp/real_data/phenos{0}.bed".format(i), shell=True)
+        subprocess.check_call("tabix -f -S 1 -s 1 -b 2 -e 3 /users/mgloud/projects/coloc_comparisons/tmp/real_data/phenos{0}.bed.gz".format(i), shell=True)
 
 
 if __name__ == "__main__":
