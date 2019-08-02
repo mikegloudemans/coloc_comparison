@@ -2,6 +2,8 @@
 ## Command line format: python eval_rand_forest.py METHOD_TO_REMOVE1 METHOD_TO_REMOVE2
 
 import sys
+## Runs on Python version >= 3.6.8, sklearn version = 0.21.2
+
 from sklearn.ensemble import RandomForestClassifier
 
 import numpy as np
@@ -43,8 +45,8 @@ testX = testX.to_numpy()  # access the numpy array containing values
 testY = testY.to_numpy()  # access the numpy array containing values
 
 # Binarize the output for training
-trainY = label_binarize(trainY, classes=[0, 1])
-n_classes = trainY.shape[1]
+#trainY = label_binarize(trainY, classes=[0, 1])
+#n_classes = trainY.shape[1]
 
 # Load REAL data to be predicted on
 real_data_path = "/users/j29tien/colocalization_ML/real_matrix.tsv"
@@ -56,7 +58,12 @@ realX = pd.read_csv(real_data_path, sep='\t').to_numpy()
 ####################
 
 # initiate and fit the random forest classifier -- need to tweak parameters --> n_estimators = 150, max_depth = 7, min_samples_leaf=1
+#Python 3 version
 randfor = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini', max_depth=7, max_features='auto', max_leaf_nodes=None, min_impurity_decrease=0.0, min_impurity_split=None, min_samples_leaf=1, min_samples_split=2, min_weight_fraction_leaf=0.0, n_estimators=150, n_jobs=None, oob_score=False, random_state=None, verbose=0, warm_start=False)
+
+#Python 2 version
+#randfor = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini', max_depth=7, max_features='auto', max_leaf_nodes=None, min_impurity_split=0, min_samples_leaf=1, min_samples_split=2, min_weight_fraction_leaf=0.0, n_estimators=150, oob_score=False, random_state=None, verbose=0, warm_start=False)
+
 randfor.fit(trainX, trainY)
 
 ###############################
