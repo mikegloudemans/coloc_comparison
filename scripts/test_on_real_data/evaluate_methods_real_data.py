@@ -108,9 +108,9 @@ def launch_pipeline(template, kept_data, out_dir, i):
     if "twas" in temp["methods"]:
         # Add corresponding eQTL tissue model
         temp["eqtl_experiments"][test[3]]["model"] = {
-                "pos":"/users/mgloud/projects/brain_gwas/scripts/data_prep/twas/Adipose_Visceral_Omentum.P01.pos", 
-                "gene":"/users/mgloud/projects/brain_gwas/scripts/data_prep/twas/Adipose_Visceral_Omentum/Adipose_Visceral_Omentum.{0}.wgt.RDat", 
-                "gene_dir_name": "Adipose_Visceral_Omentum"
+                "pos":"/users/mgloud/projects/brain_gwas/scripts/data_prep/twas/Adipose_Subcutaneous.P01.pos", 
+                "gene":"/users/mgloud/projects/brain_gwas/scripts/data_prep/twas/Adipose_Subcutaneous/Adipose_Subcutaneous.{0}.wgt.RDat", 
+                "gene_dir_name": "Adipose_Subcutaneous"
         }
 
     if "rtc" in temp["methods"]:
