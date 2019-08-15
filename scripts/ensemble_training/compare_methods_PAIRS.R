@@ -1,3 +1,5 @@
+# Author: Jeremy Tien
+
 require(readr)
 require(dplyr)
 require(UpSetR)

@@ -1,3 +1,5 @@
+# Author: Jeremy Tien
+
 ## This script runs the ensemble, given the submethods that are to be included.
 ## Command line format: python eval_rand_forest.py METHOD_TO_REMOVE1 METHOD_TO_REMOVE2
 
