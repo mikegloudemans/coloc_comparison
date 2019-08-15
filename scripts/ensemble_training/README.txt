@@ -1,9 +1,9 @@
 Author: Jeremy Tien
 
 Key Files (standalone, runnable, produce plots):
-- compare_methods_PAIRS.R --> produces the pairs plot (matrix of scatterplots) comparing all methods using REAL data
-- compare_methods_UPSET.R --> produces the upset plot comparing all methods using REAL data
-- eval/eval_rand_forest/eval_rand_forest.py --> produces the correctly formatted ROC for the ensemble method
+- compare_methods_PAIRS.R --> produces the pairs plot (matrix of scatterplots) comparing all methods using REAL data. OUTPUT FILE: /users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/allmethods_pairs.pdf
+- compare_methods_UPSET.R --> produces the upset plot comparing all methods using REAL data. OUTPUT FILE: /users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/allmethods_upset.pdf
+- eval/eval_rand_forest/eval_rand_forest.py --> produces the correctly formatted ROC for the ensemble method. OUTPUT FILE: /users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/eval/eval_rand_forest/results/comp_ROC_NEW.png
 
 Less Important Files:
 - run-ensemble.py --> code was later copied and adapted into the pipeline (brain_gwas on Github); file right now just acts as a standalone that outputs ensemble score for a given input of real data

@@ -1,4 +1,5 @@
 # Author: Jeremy Tien
+# Evaluates the random forest classifier using simulated data. Produces ROC (overlayed on ROCs of each submethod) for ensemble and writes to comp_ROC_NEW.png
 
 from sklearn.ensemble import RandomForestClassifier
 
