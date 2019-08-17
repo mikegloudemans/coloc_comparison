@@ -1,0 +1,4 @@
+*.pyc
+data
+tmp
+output
