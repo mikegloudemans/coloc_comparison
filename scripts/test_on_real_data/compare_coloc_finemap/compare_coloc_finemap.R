@@ -173,6 +173,8 @@ combo$smr_heidi_adjusted[combo$heidi_pval_smr < 0.05] = 0
 # have been dropped due to bugs in our pipeline rather than deficiencies
 # of the method itself
 
+combo$clpp_finemap_c2 = combo$clpp_finemap_c1
+
 combo$test_names = paste(combo$ref_snp, combo$eqtl_file, combo$gwas_trait, combo$base_gwas_file, combo$feature, sep="_")
 stopifnot(length(combo$test_names) == length(unique(combo$test_names)))	# Each test should have a unique ID
 
@@ -188,7 +190,7 @@ combo$ranked_baseline_smart = rank(-combo$baseline_pval5_baseline)
 combo$ranked_smr_no_heidi = rank(-combo$smr_neg_log_pval_smr)
 combo$ranked_smr_with_heidi = rank(-combo$smr_heidi_adjusted)
 combo$ranked_gsmr_no_heidi = rank(-combo$smr_neg_log_pval_gsmr)
-combo$ranked_twas = rank(-combo$twas_log_pval)
+combo$ranked_twas = rank(-combo$twas_log_pval_twas)
 
 rank_threshold = 1000
 for (i in 1:dim(upset_matrix)[1])

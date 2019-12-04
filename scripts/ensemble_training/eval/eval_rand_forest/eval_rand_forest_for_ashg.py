@@ -18,6 +18,9 @@ from sklearn.model_selection import train_test_split
 
 matrix_save_path = "/users/j29tien/colocalization_ML/colocalization_matrix_NEW.tsv"
 matrix = pd.read_csv(matrix_save_path, sep="\t")
+
+matrix = matrix[["COLOC", "RTC", "FINEMAP_STANDARD", "SMR", "GSMR", "TWAS", "colocalization_status"]]
+
 trainX, testX, trainY, testY = train_test_split(matrix.drop('colocalization_status', 1), matrix['colocalization_status'], test_size=0.25)
 
 #convert training and testing data to numpy arrays
@@ -53,9 +56,9 @@ fpr = dict()
 tpr = dict()
 roc_auc = dict()
 
-n_submethods = int(len(matrix.columns)/2) #coloc, rtc, finemap-clpp, finemap-clpp_mod, caviarbf, baseline, smart_baseline, smr, smr-heidi, gsmr, twas
-for i in range(n_submethods):
-    fpr[i], tpr[i], _ = roc_curve(testY, testX[:, i*2]) #pulling out rows of raw scores from each method (row 0, 2, 4, ... 18)
+n_submethods = int(len(matrix.columns)) #coloc, rtc, finemap-clpp, finemap-clpp_mod, caviarbf, baseline, smart_baseline, smr, smr-heidi, gsmr, twas
+for i in range(n_submethods-1):
+    fpr[i], tpr[i], _ = roc_curve(testY, testX[:, i]) #pulling out rows of raw scores from each method (row 0, 2, 4, ... 18)
     roc_auc[i] = auc(fpr[i], tpr[i])
 # store ensemble performance at n_submethods'th index
 fpr[n_submethods],tpr[n_submethods],_ = roc_curve(testY, predProbY[:,1]) # index gives probability for 0/FALSE, then 1/TRUE
@@ -71,10 +74,10 @@ plt.rc('axes', titlesize=28)
 plt.figure(figsize=(20, 15))
 lw = 6
 colors = cycle(['aqua', 'dimgray', 'cornflowerblue', 'orangered', 'gold', 'chartreuse', 'forestgreen', 'darkviolet', 'deeppink', 'crimson', 'rosybrown']) #keeping same number of colors as n_submethods
-for i, color in zip(range(n_submethods), colors):
+for i, color in zip(range(n_submethods-1), colors):
     plt.plot(fpr[i], tpr[i], color=color, lw=lw,
              label='{0} (area = {1:0.2f})'
-             ''.format(method_names[i*2], roc_auc[i]))
+             ''.format(method_names[i], roc_auc[i]))
 
 plt.plot(fpr[n_submethods], tpr[n_submethods], color='darkorange', linewidth=15, linestyle = ':', label='ENSEMBLE, random forest (area = %0.2f)' % roc_auc[n_submethods])
 plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')

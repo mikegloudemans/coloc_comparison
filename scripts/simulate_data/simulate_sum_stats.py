@@ -58,10 +58,10 @@ def main():
             print locus
 
             # Figure out if there's going to be a causal GWAS variant
-            gwas_effect_size = get_gwas_effect_size(settings)
+            gwas_log_odds = get_gwas_log_odds(settings)
 
             # Get all haplotypes using HAPGEN2
-            gwas_effect_sizes = run_hapgen2(settings, locus, gwas_effect_size)
+            gwas_effect_sizes = run_hapgen2(settings, locus, gwas_log_odds)
             settings["current_run"]["gwas_effect_sizes"] = gwas_effect_sizes
             if gwas_effect_sizes == "Bad variant" or gwas_effect_sizes == "Fail":
                 # Make sure HAPGEN2 actually succeeded, i.e. it was a valid site
@@ -183,7 +183,7 @@ def get_possible_loci(settings):
 
     return possible_loci
 
-def run_hapgen2(settings, locus, gwas_effect_size):
+def run_hapgen2(settings, locus, gwas_odds_ratio):
 
     # Get the data from 1000 Genomes VCF near locus
     filename = "/mnt/lab_data/montgomery/shared/1KG/ALL.chr{0}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz".format(locus[0])
@@ -250,7 +250,7 @@ def run_hapgen2(settings, locus, gwas_effect_size):
     # Then run HAPGEN2 to get genotypes
     # NOTE: This could be dangerous because it could lead to infinite loops
     try:
-        subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_gwas.out -dl {0} 1 {1} {2} -n {3} {4}".format(locus[1], 10**gwas_effect_size, 10**(2*gwas_effect_size), gwas_control_sample_size, gwas_case_sample_size), shell=True)
+        subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_gwas.out -dl {0} 1 {1} {2} -n {3} {4}".format(locus[1], 10 ** gwas_odds_ratio, 10 ** (gwas_odds_ratio * 2), gwas_control_sample_size, gwas_case_sample_size), shell=True)
         subprocess.check_call("hapgen2 -m /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.map -l /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.leg -h /users/mgloud/projects/coloc_comparisons/tmp/hapgen2.haps -o /users/mgloud/projects/coloc_comparisons/tmp/hapgen2_eqtl.out -dl {0} 1 1 1 -n {1} 1".format(locus[1], eqtl_sample_size), shell=True)
     except:
         return "Fail"
@@ -260,14 +260,14 @@ def run_hapgen2(settings, locus, gwas_effect_size):
     settings["current_run"]["rsids"] = vcf['ID']
 
     gwas_effect_sizes = [0] * vcf.shape[0]
-    gwas_effect_sizes[list(vcf['POS']).index(locus[1])] = gwas_effect_size
+    gwas_effect_sizes[list(vcf['POS']).index(locus[1])] = gwas_odds_ratio
 
     return gwas_effect_sizes
     
-def get_gwas_effect_size(settings):
+def get_gwas_log_odds(settings):
   
     if random.random() < settings["p_gwas_causal"]:
-        return random.uniform(settings["gwas_min_effect_size"], settings["gwas_max_effect_size"])
+        return math.log10((1 + (10 ** random.uniform(settings["gwas_min_log_odds"], settings["gwas_max_log_odds"]))) ** random.choice([-1,1]))
     else:
         return 0
 

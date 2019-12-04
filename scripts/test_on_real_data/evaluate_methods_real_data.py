@@ -10,6 +10,15 @@ from multiprocessing import Pool
 import index_genes_for_rtc
 import os
 
+selected_tissues = ["Brain_Cerebellum",
+            "Liver",
+            "Skin_Sun_Exposed",
+            "Adipose_Subcutaneous",
+            "Artery_Tibial",
+            "Muscle_Skeletal"]
+
+selected_traits = []
+
 def main():
 
     config_file = sys.argv[1]
@@ -19,6 +28,7 @@ def main():
     # Purge tmp files
     subprocess.call("rm -rf /users/mgloud/projects/coloc_comparisons/tmp/real_data", shell=True)
     subprocess.call("mkdir -p /users/mgloud/projects/coloc_comparisons/tmp/real_data", shell=True)
+
     
     # Create new subdirectory with time-stamp for this run
     now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S.%f')
@@ -36,7 +46,8 @@ def main():
         all_data = []
         f.readline()
         for line in f:
-            if "Adipose_Sub" not in line:
+            #if "Adipose_Sub" not in line:
+            if sum([t in line for t in selected_tissues]) == 0:
                 continue
             data = line.strip().split()
             kept_data.append(data)

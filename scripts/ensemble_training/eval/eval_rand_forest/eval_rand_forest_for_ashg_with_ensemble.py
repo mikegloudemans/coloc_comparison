@@ -33,7 +33,7 @@ n_classes = trainY.shape[1]
 
 # initiate and fit the random forest classifier -- need to tweak parameters --> n_estimators = 150, max_depth = 7, min_samples_leaf=1
 #randfor = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini', max_depth=7, max_features='auto', max_leaf_nodes=None, min_impurity_decrease=0.0, min_impurity_split=None, min_samples_leaf=1, min_samples_split=2, min_weight_fraction_leaf=0.0, n_estimators=150, n_jobs=None, oob_score=False, random_state=None, verbose=0, warm_start=False)
-randfor = RandomForestClassifier()
+randfor = RandomForestClassifier(n_estimators = 150, max_depth = 7, min_samples_leaf=1)
 randfor.fit(trainX, trainY)
 
 
@@ -47,6 +47,7 @@ print(predProbY)
 
 #load submethod names
 method_names = matrix.columns.values
+method_names[4] = "eCAVIAR"
 
 # Compute ROC curve and ROC area for each method
 fpr = dict()
@@ -70,8 +71,10 @@ plt.rc('axes', titlesize=28)
 
 plt.figure(figsize=(20, 15))
 lw = 6
-colors = cycle(['aqua', 'dimgray', 'cornflowerblue', 'orangered', 'gold', 'chartreuse', 'forestgreen', 'darkviolet', 'deeppink', 'crimson', 'rosybrown']) #keeping same number of colors as n_submethods
+colors = cycle(['aqua', 'dimgray', 'cornflowerblue', 'orangered', 'gold', 'chartreuse', 'forestgreen', 'darkviolet', 'orangered', 'orangered', 'gold']) #keeping same number of colors as n_submethods
 for i, color in zip(range(n_submethods), colors):
+    if i not in [0, 1, 2, 7, 9, 10]:
+        continue
     plt.plot(fpr[i], tpr[i], color=color, lw=lw,
              label='{0} (area = {1:0.2f})'
              ''.format(method_names[i*2], roc_auc[i]))
@@ -86,7 +89,31 @@ plt.ylim([0.0, 1.05])
 #plt.ylabel('True Positive Rate')
 plt.title('Comparison of colocalization identification methods')
 plt.legend(loc="lower right")
-plt.savefig("/users/mgloud/projects/coloc_comparisons/output/eval_rand_forest/comp_ROC_NEW.png")
+plt.savefig("/users/mgloud/projects/coloc_comparisons/output/eval_rand_forest/comp_ROC_NEW_with_ensemble.png")
+
+#
+#
+#
+
+plt.figure(figsize=(20, 15))
+lw = 6
+colors = cycle(['aqua', 'dimgray', 'cornflowerblue', 'orangered', 'gold', 'chartreuse', 'forestgreen', 'darkviolet', 'orangered', 'orangered', 'gold']) #keeping same number of colors as n_submethods
+for i, color in zip(range(n_submethods), colors):
+    if i not in [0, 1, 2, 7, 9, 10]:
+        continue
+    plt.plot(fpr[i], tpr[i], color=color, lw=lw,
+             label='{0} (area = {1:0.2f})'
+             ''.format(method_names[i*2], roc_auc[i]))
+plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+#plt.xlabel('False Positive Rate')
+#plt.ylabel('True Positive Rate')
+plt.title('Comparison of colocalization identification methods')
+plt.legend(loc="lower right")
+plt.savefig("/users/mgloud/projects/coloc_comparisons/output/eval_rand_forest/comp_ROC_NEW_no_ensemble.png")
+
 
 
 

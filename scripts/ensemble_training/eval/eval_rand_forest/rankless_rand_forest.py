@@ -28,7 +28,8 @@ trainY = label_binarize(trainY, classes=[0, 1])
 n_classes = trainY.shape[1]
 
 # initiate and fit the random forest classifier -- need to tweak parameters --> n_estimators = 150, max_depth = 7, min_samples_leaf=1
-randfor = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini', max_depth=7, max_features='auto', max_leaf_nodes=None, min_impurity_decrease=0.0, min_impurity_split=None, min_samples_leaf=1, min_samples_split=2, min_weight_fraction_leaf=0.0, n_estimators=150, n_jobs=None, oob_score=False, random_state=None, verbose=0, warm_start=False)
+#randfor = RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini', max_depth=7, max_features='auto', max_leaf_nodes=None, min_impurity_decrease=0.0, min_impurity_split=None, min_samples_leaf=1, min_samples_split=2, min_weight_fraction_leaf=0.0, n_estimators=150, n_jobs=None, oob_score=False, random_state=None, verbose=0, warm_start=False)
+randfor = RandomForestClassifier()
 randfor.fit(trainX, trainY)
 
 
@@ -84,7 +85,7 @@ plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('Comparison of colocalization identification methods')
 plt.legend(loc="lower right")
-plt.savefig("/users/j29tien/colocalization_ML/coloc_comparison/scripts/ensemble_training/eval/eval_rand_forest/rankless_comp_ROC.png")
+plt.savefig("/users/mgloud/projects/coloc_comparisons/output/eval_rand_forest/rankless_comp_ROC.png")
 
 
 #feature importances for the random forest
