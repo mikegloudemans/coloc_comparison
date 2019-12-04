@@ -1,7 +1,7 @@
 conservation_window = 1
 
 # Get sets of top colocalizations for each method
-source("/users/mgloud/projects/coloc_comparisons/scripts/real_data/compare_coloc_finemap.R")
+source("/users/mgloud/projects/coloc_comparisons/scripts/test_on_real_data/compare_coloc_finemap/compare_coloc_finemap.R")
 
 # Store single-position conservation and window conservation in a list
 phylop_list = list()
@@ -16,8 +16,8 @@ method_sets = list()
 
 # An ensemble-ish method...just a test
 #upset_matrix[,9] = (rowSums(upset_matrix[,c(1,3,4,6)]) >= 2) * 1
-upset_matrix[,9] = (rowSums(upset_matrix[,c(1,3,4,6)]) >= 3) * 1
-colnames(upset_matrix)[9] = "basic_ensemble"
+upset_matrix[,10] = (rowSums(upset_matrix[,c(1,3,4,6,9)]) >= 3) * 1
+colnames(upset_matrix)[10] = "basic_ensemble"
 
 # For each method tested
 for (m in 1:dim(upset_matrix)[2]) 
@@ -97,7 +97,7 @@ for (m in 1:dim(upset_matrix)[2])
 
 # TODO
 
-sum(rowSums(upset_matrix[,c(1,3,4,6)]) >= 3)
+sum(rowSums(upset_matrix[,c(1,3,4,6,9)]) >= 3)
 gwas_loci = upset_matrix_names[]
 
 # Compare distributions

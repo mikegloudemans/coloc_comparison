@@ -2,3 +2,8 @@
 data
 tmp
 output
+*nohup.out
+*.swp
+*.Rdata
+*.png
+*.pdf
