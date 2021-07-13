@@ -1,0 +1,67 @@
+{
+	"outdir" : "/oak/stanford/groups/smontgom/mgloud/projects/coloc_comparison/output/test_snakemake_on_sim_data",
+	"tmpdir" : "/oak/stanford/groups/smontgom/mgloud/projects/coloc_comparison/tmp/test_snakemake_on_sim_data",
+
+	"overlap_settings" : 
+	{
+		"selection_basis": 1,
+
+		"selection_thresholds":
+		{
+			"eqtl": 1e-5,
+			"gwas": 1e-5
+		},
+
+		"screening_thresholds":
+		{
+		},
+
+		"selection_separation_window": 5000000,
+		"overlap_window": 10000
+
+	},
+
+	"colocalization_settings":
+	{
+		"window": 500000
+	},
+
+	"colocalization_methods":
+	{
+		"coloc": {},
+		"finemap": {},
+		"baseline": {}
+	},
+
+	"studies": 
+	{
+		"sim-gwas-{0}": 
+		{
+			"file": "/oak/stanford/groups/smontgom/mgloud/projects/simulate_colocalizations/output/simulations/diverse_simulations/hg38/gwas/gwas_sumstats{0}.txt.gz", 
+			"study_type": "qtl", 
+			"selection_format": "effect_size", 
+			"ref_genome": "tg", 
+			"trait_set": 1
+		}, 
+		"sim-eqtl-{0}": 
+		{
+			"file": "/oak/stanford/groups/smontgom/mgloud/projects/simulate_colocalizations/output/simulations/diverse_simulations/hg38/eqtl/eqtl_sumstats{0}.txt.gz", 
+			"study_type": "qtl", 
+			"selection_format": "effect_size", 
+			"ref_genome": "tg", 
+			"trait_set": 2
+		}
+	}, 
+
+	"ref_genomes" : 
+	{
+		"tg" :
+		{
+			"file": "/oak/stanford/groups/smontgom/shared/1KG/hg38/ALL.chr{chrom}_GRCh38.genotypes.20170504.vcf.gz",
+			"N": 2504,
+			"af_attribute": "AF"
+		}
+	},
+
+	"plot_none": "True"
+}
